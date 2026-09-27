@@ -1,0 +1,14 @@
+name: VowSMPPlugin
+version: '1.0'
+main: us.dingl.VowSMPPlugin.VowSMPPlugin
+api-version: '1.21.11'
+bootstrapper: us.dingl.VowSMPPlugin.Ritual.StormBootstrap
+authors: [ _wolfhaley ]
+website: https://halleyscommet.github.io
+
+dependencies:
+  server:
+    packetevents:
+      load: BEFORE
+      required: true
+      join-classpath: true

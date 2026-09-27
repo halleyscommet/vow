@@ -1,0 +1,32 @@
+{
+  "attributes": {
+    "minecraft:visual/sky_color": 6358020,
+    "minecraft:visual/cloud_color": 0,
+    "minecraft:visual/ambient_particles": [
+      {
+        "particle": {
+          "type": "minecraft:ash"
+        },
+        "probability": 0.1
+      }
+    ],
+    "minecraft:visual/fog_color": 0,
+    "minecraft:visual/sky_light_color": 16146769,
+    "minecraft:visual/star_brightness": 0
+  },
+  "temperature": 0,
+  "downfall": 0,
+  "has_precipitation": false,
+  "temperature_modifier": "none",
+  "effects": {
+    "water_color": 10131862,
+    "grass_color": 10131862,
+    "foliage_color": 10131862,
+    "dry_foliage_color": 10131862,
+    "grass_color_modifier": "none"
+  },
+  "spawners": {},
+  "spawn_costs": {},
+  "carvers": [],
+  "features": []
+}
