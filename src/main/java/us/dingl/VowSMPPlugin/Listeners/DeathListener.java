@@ -35,34 +35,34 @@ public class DeathListener implements Listener {
         }
 
         int before = plugin.getPlayerLives(id);
-        int remaining = plugin.updatePlayerLifeCounter(id, -1);
+        int toLose = plugin.getVowManager().livesLostOnDeath(player, before);
+        int remaining = plugin.updatePlayerLifeCounter(id, -toLose);
         if (remaining <= 0) {
             Bukkit.broadcast(Component.text(player.getName() + " has zero lives!",
                     NamedTextColor.DARK_RED, TextDecoration.BOLD));
         }
 
-        // only hand out a life if the victim actually lost one - otherwise killing someone
+        // only hand out lives the victim actually lost - otherwise killing someone
         // at 0 lives over and over would farm lives
-        if (remaining >= before) return;
+        int lost = before - remaining;
+        if (lost <= 0) return;
 
-        // natural causes (or killing themselves): the life drops where they died instead of vanishing
+        // natural causes (or killing themselves): the lives drop where they died instead of vanishing
         if (killer == null || killer.equals(player)) {
-            player.getWorld().dropItemNaturally(player.getLocation(), LifeItem.create(1));
+            player.getWorld().dropItemNaturally(player.getLocation(), LifeItem.create(lost));
             return;
         }
 
-        // killer gets a life back
+        // killer takes as many as they can hold (none if they're at 0), the rest drop
         UUID killerId = killer.getUniqueId();
         int killerLives = plugin.getPlayerLives(killerId);
+        int given = killerLives > 0 ? Math.min(lost, VowSMPPlugin.MAX_LIVES - killerLives) : 0;
 
-        if (killerLives > 0) {
-            if (killerLives >= VowSMPPlugin.MAX_LIVES) {
-                player.getWorld().dropItemNaturally(player.getLocation(), LifeItem.create(1));
-            } else {
-                plugin.updatePlayerLifeCounter(killerId, 1);
-            }
-        } else {
-            player.getWorld().dropItemNaturally(player.getLocation(), LifeItem.create(1));
+        if (given > 0) {
+            plugin.updatePlayerLifeCounter(killerId, given);
+        }
+        if (lost > given) {
+            player.getWorld().dropItemNaturally(player.getLocation(), LifeItem.create(lost - given));
         }
     }
 }

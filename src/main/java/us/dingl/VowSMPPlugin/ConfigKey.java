@@ -10,6 +10,7 @@ public enum ConfigKey {
     KILLED_PLAYERS("killed-players"),
     PLAYER_LIVES("player-lives"),
     LIVES_SHOWN("lives-shown"),
+    PLAYER_VOWS("player-vows"),
     RESOURCE_PACK_URL("resource-pack.url"),
     RESOURCE_PACK_HASH("resource-pack.hash");
 

@@ -7,3 +7,4 @@ resource-pack:
 logged-players: []
 killed-players: []
 player-lives: {}
+player-vows: {}

@@ -21,7 +21,6 @@ import us.dingl.VowSMPPlugin.Items.LifeItem;
 import us.dingl.VowSMPPlugin.Items.RitualItem;
 import us.dingl.VowSMPPlugin.Leaderboard.Leaderboard;
 import us.dingl.VowSMPPlugin.Listeners.ClaimLifeListener;
-import us.dingl.VowSMPPlugin.Listeners.CombatLogListener;
 import us.dingl.VowSMPPlugin.Listeners.DeathListener;
 import us.dingl.VowSMPPlugin.Listeners.LoginListener;
 import us.dingl.VowSMPPlugin.Listeners.ResourcePackListener;
@@ -29,6 +28,8 @@ import us.dingl.VowSMPPlugin.Listeners.Ritual.AltarClickListener;
 import us.dingl.VowSMPPlugin.Listeners.Ritual.StormConfinementListener;
 import us.dingl.VowSMPPlugin.Ritual.Altar;
 import us.dingl.VowSMPPlugin.Ritual.Storm;
+import us.dingl.VowSMPPlugin.Vows.Impl.GoodwyllVow;
+import us.dingl.VowSMPPlugin.Vows.VowManager;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,6 +41,7 @@ public final class VowSMPPlugin extends JavaPlugin {
 
     private Leaderboard leaderboard;
     private Storm storm;
+    private VowManager vowManager;
 
     private HeadCache headCache;
 
@@ -61,6 +63,10 @@ public final class VowSMPPlugin extends JavaPlugin {
         storm = new Storm(this);
         LifeItem.init(this);
         RitualItem.init(this);
+
+        vowManager = new VowManager(this);
+        registerVows();
+        vowManager.start();
 
         registerCommands();
         registerListeners();
@@ -100,6 +106,9 @@ public final class VowSMPPlugin extends JavaPlugin {
         if (storm != null) {
             storm.shutdown();
         }
+        if (vowManager != null) {
+            vowManager.stop();
+        }
         if (headCache != null) {
             headCache.stop();
         }
@@ -115,6 +124,10 @@ public final class VowSMPPlugin extends JavaPlugin {
 
     public Storm getStorm() {
         return storm;
+    }
+
+    public VowManager getVowManager() {
+        return vowManager;
     }
 
     public LivesActionBar getLivesActionBar() {
@@ -315,7 +328,7 @@ public final class VowSMPPlugin extends JavaPlugin {
     private void registerPermissions() {
         PluginManager pm = getServer().getPluginManager();
         addPermission(pm, "vow.config", PermissionDefault.OP);
-        addPermission(pm, "vow.stats", PermissionDefault.TRUE);
+        addPermission(pm, "vow.stats", PermissionDefault.OP);
         addPermission(pm, "vow.debug", PermissionDefault.OP);
         addPermission(pm, "vow.withdraw", PermissionDefault.TRUE);
         addPermission(pm, "vow.lives", PermissionDefault.TRUE);
@@ -325,6 +338,11 @@ public final class VowSMPPlugin extends JavaPlugin {
         if (pm.getPermission(name) == null) {
             pm.addPermission(new Permission(name, def));
         }
+    }
+
+    private void registerVows() {
+        vowManager.register(new GoodwyllVow(this));
+        // new vows go here
     }
 
     private void registerCommands() {

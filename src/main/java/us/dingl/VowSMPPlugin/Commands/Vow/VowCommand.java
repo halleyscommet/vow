@@ -19,7 +19,7 @@ public class VowCommand {
         subCommands.add(new GuiSubCommand(plugin));
         subCommands.add(new StatsSubCommand(plugin));
         subCommands.add(new RitualSubCommand(plugin));
-        subCommands.add(new AdminSubCommand());
+        subCommands.add(new AdminSubCommand(plugin));
         // future subcommands go here
     }
 
