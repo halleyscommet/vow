@@ -27,9 +27,11 @@ public class DeathListener implements Listener {
         UUID id = player.getUniqueId();
         Player killer = player.getKiller();
 
-        if (plugin.addPlayerToKilled(id)) {
-            Bukkit.broadcast(Component.text(player.getName() + " has died for the first time! o7",
-                    NamedTextColor.RED, TextDecoration.BOLD));
+        if (plugin.getLeaderboardEnabled()) {
+            if (plugin.addPlayerToKilled(id)) {
+                Bukkit.broadcast(Component.text(player.getName() + " has died for the first time! o7",
+                        NamedTextColor.RED, TextDecoration.BOLD));
+            }
         }
 
         int before = plugin.getPlayerLives(id);
@@ -39,21 +41,28 @@ public class DeathListener implements Listener {
                     NamedTextColor.DARK_RED, TextDecoration.BOLD));
         }
 
-        // killer gets a life back, but not for killing themselves, and only if the victim
-        // actually lost one - otherwise killing someone at 0 lives over and over would farm lives
-        if (killer != null && !killer.equals(player) && remaining < before) {
-            UUID killerId = killer.getUniqueId();
-            int killerLives = plugin.getPlayerLives(killerId);
+        // only hand out a life if the victim actually lost one - otherwise killing someone
+        // at 0 lives over and over would farm lives
+        if (remaining >= before) return;
 
-            if (killerLives > 0) {
-                if (killerLives >= VowSMPPlugin.MAX_LIVES) {
-                    player.getWorld().dropItemNaturally(player.getLocation(), LifeItem.create(1));
-                } else {
-                    plugin.updatePlayerLifeCounter(killerId, 1);
-                }
-            } else {
+        // natural causes (or killing themselves): the life drops where they died instead of vanishing
+        if (killer == null || killer.equals(player)) {
+            player.getWorld().dropItemNaturally(player.getLocation(), LifeItem.create(1));
+            return;
+        }
+
+        // killer gets a life back
+        UUID killerId = killer.getUniqueId();
+        int killerLives = plugin.getPlayerLives(killerId);
+
+        if (killerLives > 0) {
+            if (killerLives >= VowSMPPlugin.MAX_LIVES) {
                 player.getWorld().dropItemNaturally(player.getLocation(), LifeItem.create(1));
+            } else {
+                plugin.updatePlayerLifeCounter(killerId, 1);
             }
+        } else {
+            player.getWorld().dropItemNaturally(player.getLocation(), LifeItem.create(1));
         }
     }
 }

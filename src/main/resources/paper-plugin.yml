@@ -1,5 +1,5 @@
 name: VowSMPPlugin
-version: '1.0'
+version: '1.0.2'
 main: us.dingl.VowSMPPlugin.VowSMPPlugin
 api-version: '1.21.11'
 bootstrapper: us.dingl.VowSMPPlugin.Ritual.StormBootstrap
