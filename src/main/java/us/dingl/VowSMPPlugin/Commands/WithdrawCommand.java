@@ -2,7 +2,7 @@ package us.dingl.VowSMPPlugin.Commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.tree.LiteralCommandNode;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
@@ -10,10 +10,13 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.entity.Player;
 import us.dingl.VowSMPPlugin.Commands.Vow.CommandUtil;
+import us.dingl.VowSMPPlugin.Commands.Vow.SubCommand;
 import us.dingl.VowSMPPlugin.Items.LifeItem;
+import us.dingl.VowSMPPlugin.Permissions;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 
-public class WithdrawCommand {
+/// registered both as its own command and as a /vow subcommand
+public class WithdrawCommand implements SubCommand {
 
     private final VowSMPPlugin plugin;
 
@@ -21,9 +24,10 @@ public class WithdrawCommand {
         this.plugin = plugin;
     }
 
-    public LiteralCommandNode<CommandSourceStack> build() {
+    @Override
+    public LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("withdraw")
-                .requires(source -> source.getSender().hasPermission("vow.withdraw"))
+                .requires(CommandUtil.permission(Permissions.WITHDRAW))
                 .then(Commands.argument("count", IntegerArgumentType.integer(1, VowSMPPlugin.MAX_LIVES))
                         .executes(ctx -> {
                             Player player = CommandUtil.requirePlayer(ctx);
@@ -47,7 +51,6 @@ public class WithdrawCommand {
                             player.sendActionBar(actionBarText);
 
                             return Command.SINGLE_SUCCESS;
-                        }))
-                .build();
+                        }));
     }
 }

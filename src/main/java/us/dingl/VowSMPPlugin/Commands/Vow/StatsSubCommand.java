@@ -7,6 +7,7 @@ import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
+import us.dingl.VowSMPPlugin.Permissions;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 
 import java.util.Collection;
@@ -26,7 +27,7 @@ public class StatsSubCommand implements SubCommand {
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("stats")
-                .requires(source -> source.getSender().hasPermission("vow.stats"))
+                .requires(CommandUtil.permission(Permissions.STATS))
                 .then(Commands.literal("nodeaths").executes(ctx -> {
                     sendNames(ctx.getSource().getSender(), "The following players haven't died yet:", plugin.getPlayersNotYetKilled());
                     return Command.SINGLE_SUCCESS;

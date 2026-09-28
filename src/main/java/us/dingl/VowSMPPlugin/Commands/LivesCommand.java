@@ -2,16 +2,19 @@ package us.dingl.VowSMPPlugin.Commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.BoolArgumentType;
-import com.mojang.brigadier.tree.LiteralCommandNode;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import us.dingl.VowSMPPlugin.Commands.Vow.CommandUtil;
+import us.dingl.VowSMPPlugin.Commands.Vow.SubCommand;
+import us.dingl.VowSMPPlugin.Permissions;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 
-public class LivesCommand {
+/// registered both as its own command and as a /vow subcommand
+public class LivesCommand implements SubCommand {
 
     private final VowSMPPlugin plugin;
 
@@ -19,9 +22,10 @@ public class LivesCommand {
         this.plugin = plugin;
     }
 
-    public LiteralCommandNode<CommandSourceStack> build() {
+    @Override
+    public LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("lives")
-                .requires(source -> source.getSender().hasPermission("vow.lives"))
+                .requires(CommandUtil.permission(Permissions.LIVES))
                 .executes(ctx -> {
                     Player player = CommandUtil.requirePlayer(ctx);
                     int lives = plugin.getPlayerLives(player.getUniqueId());
@@ -41,8 +45,7 @@ public class LivesCommand {
                                 .executes(ctx -> {
                                     Player player = CommandUtil.requirePlayer(ctx);
                                     return setActionBar(player, BoolArgumentType.getBool(ctx, "enabled"));
-                                })))
-                .build();
+                                })));
     }
 
     private int setActionBar(Player player, boolean enabled) {

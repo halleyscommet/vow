@@ -4,7 +4,10 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import org.bukkit.entity.Player;
+
+import java.util.function.Predicate;
 
 public final class CommandUtil {
 
@@ -18,5 +21,15 @@ public final class CommandUtil {
             return player;
         }
         throw NOT_PLAYER.create();
+    }
+
+    /// for .requires(...) - hides the command entirely from anyone without the permission
+    public static Predicate<CommandSourceStack> permission(String permission) {
+        return source -> source.getSender().hasPermission(permission);
+    }
+
+    /// resolves an ArgumentTypes.player() argument
+    public static Player getPlayer(CommandContext<CommandSourceStack> ctx, String name) throws CommandSyntaxException {
+        return ctx.getArgument(name, PlayerSelectorArgumentResolver.class).resolve(ctx.getSource()).getFirst();
     }
 }

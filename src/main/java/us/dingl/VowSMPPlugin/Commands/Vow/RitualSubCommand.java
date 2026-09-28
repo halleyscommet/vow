@@ -5,7 +5,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.entity.Player;
-import us.dingl.VowSMPPlugin.Ritual.FakeLightning;
+import us.dingl.VowSMPPlugin.Permissions;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 
 public class RitualSubCommand implements SubCommand {
@@ -19,7 +19,7 @@ public class RitualSubCommand implements SubCommand {
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("ritual")
-                .requires(source -> source.getSender().hasPermission("vow.debug"))
+                .requires(CommandUtil.permission(Permissions.RITUAL))
                 .then(Commands.literal("start")
                         .executes(ctx -> {
                             Player player = CommandUtil.requirePlayer(ctx);
@@ -32,12 +32,6 @@ public class RitualSubCommand implements SubCommand {
                 .then(Commands.literal("stop")
                         .executes(ctx -> {
                             plugin.getStorm().stop();
-                            return Command.SINGLE_SUCCESS;
-                        }))
-                .then(Commands.literal("lightning")
-                        .executes(ctx -> {
-                            Player player = CommandUtil.requirePlayer(ctx);
-                            new FakeLightning().summon(plugin, player);
                             return Command.SINGLE_SUCCESS;
                         }));
     }

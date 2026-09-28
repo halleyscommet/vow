@@ -4,26 +4,23 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import org.bukkit.entity.Player;
-import us.dingl.VowSMPPlugin.Guis.ConfigMenuGui;
 import us.dingl.VowSMPPlugin.Permissions;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 
-public class GuiSubCommand implements SubCommand {
+public class UpdateSubCommand implements SubCommand {
 
     private final VowSMPPlugin plugin;
 
-    public GuiSubCommand(VowSMPPlugin plugin) {
+    public UpdateSubCommand(VowSMPPlugin plugin) {
         this.plugin = plugin;
     }
 
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
-        return Commands.literal("menu")
-                .requires(CommandUtil.permission(Permissions.MENU))
+        return Commands.literal("update")
+                .requires(CommandUtil.permission(Permissions.UPDATE))
                 .executes(ctx -> {
-                    Player player = CommandUtil.requirePlayer(ctx);
-                    ConfigMenuGui.create(plugin).open(player);
+                    plugin.getUpdater().update(ctx.getSource().getSender());
                     return Command.SINGLE_SUCCESS;
                 });
     }

@@ -15,6 +15,7 @@ import us.dingl.VowSMPPlugin.Gui.Gui;
 import us.dingl.VowSMPPlugin.Gui.GuiInstance;
 import us.dingl.VowSMPPlugin.Gui.SlotPermission;
 import us.dingl.VowSMPPlugin.Gui.StateBinding;
+import us.dingl.VowSMPPlugin.Permissions;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 
 import java.util.List;
@@ -67,7 +68,7 @@ public final class ConfigMenuGui {
                 .button(15, () -> actionItem(Material.ENCHANTED_BOOK, "Vows", NamedTextColor.LIGHT_PURPLE),
                         (player, clickType) -> VowsMenuGui.create(plugin).open(player))
                 .button(16, () -> updateItem(plugin), (player, clickType) -> {
-                    if (!player.hasPermission("vow.update")) {
+                    if (!player.hasPermission(Permissions.UPDATE)) {
                         player.sendMessage(Component.text("You don't have permission to update the plugin.", NamedTextColor.RED));
                         return;
                     }

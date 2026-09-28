@@ -7,9 +7,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
-import org.bukkit.permissions.Permission;
-import org.bukkit.permissions.PermissionDefault;
-import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import us.dingl.VowSMPPlugin.Commands.LivesCommand;
 import us.dingl.VowSMPPlugin.Commands.Vow.VowCommand;
@@ -59,7 +56,7 @@ public final class VowSMPPlugin extends JavaPlugin {
         livesActionBar = new LivesActionBar(this);
         livesActionBar.start();
 
-        registerPermissions();
+        Permissions.register(getServer().getPluginManager());
 
         leaderboard = new Leaderboard(this);
         storm = new Storm(this);
@@ -333,22 +330,6 @@ public final class VowSMPPlugin extends JavaPlugin {
 
     // registration
 
-    private void registerPermissions() {
-        PluginManager pm = getServer().getPluginManager();
-        addPermission(pm, "vow.config", PermissionDefault.OP);
-        addPermission(pm, "vow.stats", PermissionDefault.OP);
-        addPermission(pm, "vow.debug", PermissionDefault.OP);
-        addPermission(pm, "vow.update", PermissionDefault.OP);
-        addPermission(pm, "vow.withdraw", PermissionDefault.TRUE);
-        addPermission(pm, "vow.lives", PermissionDefault.TRUE);
-    }
-
-    private void addPermission(PluginManager pm, String name, PermissionDefault def) {
-        if (pm.getPermission(name) == null) {
-            pm.addPermission(new Permission(name, def));
-        }
-    }
-
     private void registerVows() {
         vowManager.register(new GoodwyllVow(this));
         // new vows go here
@@ -358,8 +339,8 @@ public final class VowSMPPlugin extends JavaPlugin {
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             Commands registrar = event.registrar();
             registrar.register(new VowCommand(this).build(), "Vow SMP commands");
-            registrar.register(new WithdrawCommand(this).build(), "Withdraw lives as items");
-            registrar.register(new LivesCommand(this).build(), "Get lives or show an actionbar");
+            registrar.register(new WithdrawCommand(this).build().build(), "Withdraw lives as items");
+            registrar.register(new LivesCommand(this).build().build(), "Get lives or show an actionbar");
         });
     }
 

@@ -12,6 +12,7 @@ import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import us.dingl.VowSMPPlugin.Permissions;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 
 import java.util.concurrent.CompletableFuture;
@@ -27,14 +28,13 @@ public class LeaderboardSubCommand implements SubCommand {
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("leaderboard")
-                .requires(source -> source.getSender().hasPermission("vow.config"))
+                .requires(CommandUtil.permission(Permissions.LEADERBOARD))
+                .executes(this::status)
                 .then(Commands.literal("setpos")
                         .then(coordArg("x", 0)
                                 .then(coordArg("y", 1)
                                         .then(coordArg("z", 2).executes(this::setPos)))))
-                .then(Commands.literal("getpos").executes(this::getPos))
-                .then(Commands.literal("toggle").executes(this::toggle))
-                .then(Commands.literal("getenabled").executes(this::getEnabled));
+                .then(Commands.literal("toggle").executes(this::toggle));
     }
 
     private int setPos(CommandContext<CommandSourceStack> ctx) {
@@ -48,26 +48,21 @@ public class LeaderboardSubCommand implements SubCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private int getPos(CommandContext<CommandSourceStack> ctx) {
+    private int status(CommandContext<CommandSourceStack> ctx) {
         CommandSender sender = ctx.getSource().getSender();
         Location location = plugin.getLeaderboardLocation();
-        if (location == null) {
-            sender.sendMessage("No worlds are loaded.");
-            return 0;
-        }
-        sender.sendMessage("Leaderboard position: " + location.getBlockX() + " " + location.getBlockY() + " " + location.getBlockZ());
+        String pos = location == null
+                ? "unknown (no worlds loaded)"
+                : location.getBlockX() + " " + location.getBlockY() + " " + location.getBlockZ();
+
+        sender.sendMessage("Leaderboard is " + (plugin.getLeaderboardEnabled() ? "enabled" : "disabled") + ".");
+        sender.sendMessage("Position: " + pos);
         return Command.SINGLE_SUCCESS;
     }
 
     private int toggle(CommandContext<CommandSourceStack> ctx) {
         boolean enabled = plugin.toggleLeaderboard();
         ctx.getSource().getSender().sendMessage("Leaderboard has been " + (enabled ? "enabled" : "disabled") + ".");
-        return Command.SINGLE_SUCCESS;
-    }
-
-    private int getEnabled(CommandContext<CommandSourceStack> ctx) {
-        boolean enabled = plugin.getLeaderboardEnabled();
-        ctx.getSource().getSender().sendMessage("Leaderboard is " + (enabled ? "enabled" : "disabled") + ".");
         return Command.SINGLE_SUCCESS;
     }
 
