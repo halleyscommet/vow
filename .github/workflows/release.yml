@@ -1,0 +1,33 @@
+# pushing a tag like v1.0.3 builds the plugin and attaches the jar to a GitHub release,
+# which /vow admin update then downloads
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build
+        run: |
+          # the tag is the version, so the pom never needs bumping by hand
+          mvn -B versions:set -DnewVersion="${GITHUB_REF_NAME#v}" -DgenerateBackupPoms=false
+          mvn -B package
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: target/VowSMPPlugin-*.jar
+          generate_release_notes: true

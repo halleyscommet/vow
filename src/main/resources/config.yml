@@ -1,5 +1,8 @@
 leaderboard-enabled: false
 
+# GitHub repo that /vow admin update downloads releases from
+update-repo: "halleyscommet/vow"
+
 resource-pack:
   url: "https://1.dingl.us/files/share/589d584501bb4d89aca1adcf5cb54168/download"
   hash: "2108e1a0d49bc7343343cc3bb9e54bb078ad6608"

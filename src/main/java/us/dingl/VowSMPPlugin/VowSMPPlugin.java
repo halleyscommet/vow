@@ -28,6 +28,7 @@ import us.dingl.VowSMPPlugin.Listeners.Ritual.AltarClickListener;
 import us.dingl.VowSMPPlugin.Listeners.Ritual.StormConfinementListener;
 import us.dingl.VowSMPPlugin.Ritual.Altar;
 import us.dingl.VowSMPPlugin.Ritual.Storm;
+import us.dingl.VowSMPPlugin.Update.Updater;
 import us.dingl.VowSMPPlugin.Vows.Impl.GoodwyllVow;
 import us.dingl.VowSMPPlugin.Vows.VowManager;
 
@@ -42,6 +43,7 @@ public final class VowSMPPlugin extends JavaPlugin {
     private Leaderboard leaderboard;
     private Storm storm;
     private VowManager vowManager;
+    private Updater updater;
 
     private HeadCache headCache;
 
@@ -67,6 +69,8 @@ public final class VowSMPPlugin extends JavaPlugin {
         vowManager = new VowManager(this);
         registerVows();
         vowManager.start();
+
+        updater = new Updater(this, getFile());
 
         registerCommands();
         registerListeners();
@@ -128,6 +132,10 @@ public final class VowSMPPlugin extends JavaPlugin {
 
     public VowManager getVowManager() {
         return vowManager;
+    }
+
+    public Updater getUpdater() {
+        return updater;
     }
 
     public LivesActionBar getLivesActionBar() {
@@ -330,6 +338,7 @@ public final class VowSMPPlugin extends JavaPlugin {
         addPermission(pm, "vow.config", PermissionDefault.OP);
         addPermission(pm, "vow.stats", PermissionDefault.OP);
         addPermission(pm, "vow.debug", PermissionDefault.OP);
+        addPermission(pm, "vow.update", PermissionDefault.OP);
         addPermission(pm, "vow.withdraw", PermissionDefault.TRUE);
         addPermission(pm, "vow.lives", PermissionDefault.TRUE);
     }

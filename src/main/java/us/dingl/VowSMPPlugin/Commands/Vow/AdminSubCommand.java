@@ -44,6 +44,13 @@ public class AdminSubCommand implements SubCommand {
                             return Command.SINGLE_SUCCESS;
                         })
                 )
+                .then(Commands.literal("update")
+                        .requires(source -> source.getSender().hasPermission("vow.update"))
+                        .executes(ctx -> {
+                            plugin.getUpdater().update(ctx.getSource().getSender());
+                            return Command.SINGLE_SUCCESS;
+                        })
+                )
                 .then(Commands.literal("setvow")
                         .then(Commands.argument("target", ArgumentTypes.player())
                                 .then(Commands.argument("vow", StringArgumentType.word())
