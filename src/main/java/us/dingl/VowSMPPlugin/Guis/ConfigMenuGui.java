@@ -5,6 +5,7 @@ import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -63,6 +64,18 @@ public final class ConfigMenuGui {
                         })
                 .button(14, () -> actionItem(Material.PLAYER_HEAD, "Edit Lives", NamedTextColor.GOLD),
                         (player, clickType) -> LivesMenuGui.create(plugin).open(player))
+                .button(15, () -> actionItem(Material.ENCHANTED_BOOK, "Vows", NamedTextColor.LIGHT_PURPLE),
+                        (player, clickType) -> VowsMenuGui.create(plugin).open(player))
+                .button(16, () -> updateItem(plugin), (player, clickType) -> {
+                    if (!player.hasPermission("vow.update")) {
+                        player.sendMessage(Component.text("You don't have permission to update the plugin.", NamedTextColor.RED));
+                        return;
+                    }
+                    // chat is hidden behind the menu, so close it to show the update progress.
+                    // next tick because closing inside the click event is unreliable
+                    Bukkit.getScheduler().runTask(plugin, () -> player.closeInventory());
+                    plugin.getUpdater().update(player);
+                })
                 .filler(FILLER_SLOTS, filler)
                 .zone("zone1", SlotPermission.NONE, FILLER_SLOTS)
                 .build();
@@ -73,6 +86,17 @@ public final class ConfigMenuGui {
         item.editMeta(meta -> meta.displayName(
                 Component.text(name, color, TextDecoration.BOLD).decoration(TextDecoration.ITALIC, false)));
         item.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().build());
+        return item;
+    }
+
+    private static ItemStack updateItem(VowSMPPlugin plugin) {
+        ItemStack item = actionItem(Material.RECOVERY_COMPASS, "Check for Updates", NamedTextColor.AQUA);
+        item.editMeta(meta -> meta.lore(List.of(
+                Component.text("Current version: " + plugin.getPluginMeta().getVersion(), NamedTextColor.GRAY)
+                        .decoration(TextDecoration.ITALIC, false),
+                Component.text("Downloads the latest release,", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false),
+                Component.text("then restart to apply it", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
+        )));
         return item;
     }
 

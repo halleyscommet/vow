@@ -1,5 +1,6 @@
 package us.dingl.VowSMPPlugin.Vows;
 
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
@@ -22,6 +23,11 @@ public abstract class Vow implements Listener {
     public abstract String name();
 
     public abstract String description();
+
+    /// item shown for this vow in the vows menu
+    public Material icon() {
+        return Material.ENCHANTED_BOOK;
+    }
 
     /// the player just got this vow (only called if they're online at the time)
     public void onGain(Player player) {}

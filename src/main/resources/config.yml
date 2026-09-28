@@ -1,6 +1,5 @@
 leaderboard-enabled: false
 
-# GitHub repo that /vow admin update downloads releases from
 update-repo: "halleyscommet/vow"
 
 resource-pack:

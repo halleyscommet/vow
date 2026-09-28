@@ -53,6 +53,14 @@ public class VowManager {
         return assigned.get(id);
     }
 
+    /// everyone (online or not) who has this vow
+    public List<UUID> getHolders(Vow vow) {
+        return assigned.entrySet().stream()
+                .filter(e -> e.getValue() == vow)
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
     /// pass null to clear the player's vow
     public void setVow(UUID id, Vow vow) {
         Vow old = vow == null ? assigned.remove(id) : assigned.put(id, vow);
