@@ -26,6 +26,7 @@ import us.dingl.VowSMPPlugin.Listeners.Ritual.StormConfinementListener;
 import us.dingl.VowSMPPlugin.Ritual.Altar;
 import us.dingl.VowSMPPlugin.Ritual.Storm;
 import us.dingl.VowSMPPlugin.Update.Updater;
+import us.dingl.VowSMPPlugin.Vows.Impl.CharlotteVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.GoodwyllVow;
 import us.dingl.VowSMPPlugin.Vows.VowManager;
 
@@ -332,6 +333,7 @@ public final class VowSMPPlugin extends JavaPlugin {
 
     private void registerVows() {
         vowManager.register(new GoodwyllVow(this));
+        vowManager.register(new CharlotteVow(this));
         // new vows go here
     }
 
