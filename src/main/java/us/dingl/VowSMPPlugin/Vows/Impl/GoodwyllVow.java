@@ -6,7 +6,7 @@ import org.bukkit.potion.PotionEffectType;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 import us.dingl.VowSMPPlugin.Vows.Vow;
 
-/// at 7 lives: Speed II. Dying at 7 lives costs 3 lives instead of 1.
+/// at 7 lives: Speed II. Every death costs 3 lives instead of 1.
 public class GoodwyllVow extends Vow {
 
     private static final int TRIGGER_LIVES = 7;
@@ -28,8 +28,8 @@ public class GoodwyllVow extends Vow {
 
     @Override
     public String description() {
-        return "At " + TRIGGER_LIVES + " lives you get Speed II, but dying at " + TRIGGER_LIVES
-                + " lives costs " + LIVES_LOST + " lives.";
+        return "At " + TRIGGER_LIVES + " lives you get Speed II, but every death costs "
+                + LIVES_LOST + " lives.";
     }
 
     @Override
@@ -42,6 +42,6 @@ public class GoodwyllVow extends Vow {
 
     @Override
     public int livesLostOnDeath(Player player, int livesBefore, int lost) {
-        return livesBefore >= TRIGGER_LIVES ? LIVES_LOST : lost;
+        return LIVES_LOST;
     }
 }
