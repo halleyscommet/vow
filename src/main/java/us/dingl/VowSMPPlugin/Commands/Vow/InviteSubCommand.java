@@ -1,6 +1,5 @@
 package us.dingl.VowSMPPlugin.Commands.Vow;
 
-import com.destroystokyo.paper.profile.PlayerProfile;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -44,13 +43,8 @@ public class InviteSubCommand implements SubCommand {
             return 0;
         }
 
-        // they've probably never joined, so the name -> uuid lookup may have to ask Mojang. Do that off the main thread.
-        PlayerProfile profile = Bukkit.createProfile(name);
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            boolean found = profile.complete(false);
-            Bukkit.getScheduler().runTask(plugin, () -> finishInvite(inviter, name, found ? profile.getId() : null));
-        });
-
+        // they've probably never joined, so this may have to ask Mojang
+        CommandUtil.lookupUuid(plugin, name, id -> finishInvite(inviter, name, id));
         inviter.sendMessage(Component.text("Looking up " + name + "...", NamedTextColor.GRAY));
         return Command.SINGLE_SUCCESS;
     }
@@ -67,7 +61,9 @@ public class InviteSubCommand implements SubCommand {
             inviter.sendMessage(Component.text(name + " is already invited.", NamedTextColor.RED));
             return;
         }
-        if (target.isWhitelisted() || target.isOp() || target.hasPlayedBefore() || target.isOnline()) {
+        // a forgiven player has played before (that's how their invite ended), so that check is skipped for them
+        boolean playedBefore = target.hasPlayedBefore() && !plugin.isInviteForgiven(id);
+        if (target.isWhitelisted() || target.isOp() || target.isOnline() || playedBefore) {
             inviter.sendMessage(Component.text(name + " is already on the server.", NamedTextColor.RED));
             return;
         }

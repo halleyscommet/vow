@@ -12,3 +12,5 @@ player-lives: {}
 player-vows: {}
 # invited player uuid -> uuid of the Collera who invited them
 invites: {}
+# players an admin forgave with /vow forgive, so Collera can invite them again
+forgiven-invites: []

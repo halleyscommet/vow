@@ -326,9 +326,10 @@ public final class VowSMPPlugin extends JavaPlugin {
         return getConfig().isSet(ConfigKey.INVITES.getPath() + "." + id);
     }
 
-    /// whitelists them with 0 lives, so they can't claim or drop any
+    /// whitelists them with 0 lives, so they can't claim or drop any. Uses up a forgiveness.
     public void addInvite(UUID invitee, UUID inviter) {
         getConfig().set(ConfigKey.INVITES.getPath() + "." + invitee, inviter.toString());
+        setUuidListEntry(ConfigKey.FORGIVEN_INVITES, invitee, false);
         getConfig().set(ConfigKey.PLAYER_LIVES.getPath() + "." + invitee, 0); // addPlayerToLog won't overwrite it
         saveConfig();
         Bukkit.getOfflinePlayer(invitee).setWhitelisted(true);
@@ -339,6 +340,26 @@ public final class VowSMPPlugin extends JavaPlugin {
         getConfig().set(ConfigKey.INVITES.getPath() + "." + invitee, null);
         saveConfig();
         Bukkit.getOfflinePlayer(invitee).setWhitelisted(false);
+    }
+
+    /// true if an admin forgave them, so they can be invited even though they've played before
+    public boolean isInviteForgiven(UUID id) {
+        return readUuidList(ConfigKey.FORGIVEN_INVITES).contains(id);
+    }
+
+    /// lets them be invited once more, even though they've played before. Lasts until they're invited.
+    public void forgiveInvite(UUID id) {
+        setUuidListEntry(ConfigKey.FORGIVEN_INVITES, id, true);
+        saveConfig();
+    }
+
+    /// adds or removes one uuid from a config list. Doesn't save.
+    private void setUuidListEntry(ConfigKey key, UUID id, boolean present) {
+        List<String> list = new ArrayList<>(getConfig().getStringList(key.getPath()));
+        boolean changed = present ? !list.contains(id.toString()) && list.add(id.toString()) : list.remove(id.toString());
+        if (changed) {
+            getConfig().set(key.getPath(), list);
+        }
     }
 
     private List<UUID> readUuidList(ConfigKey key) {

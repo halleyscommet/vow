@@ -22,6 +22,7 @@ public final class Permissions {
     public static final String VOWS_LIST = "vow.vows.list";
     public static final String LEADERBOARD = "vow.leaderboard";
     public static final String VOWS_MANAGE = "vow.vows.manage";
+    public static final String INVITES_FORGIVE = "vow.invites.forgive";
     public static final String RITUAL = "vow.ritual";
     public static final String UPDATE = "vow.update";
     public static final String DEBUG = "vow.debug";
@@ -43,6 +44,7 @@ public final class Permissions {
         add(pm, adminChildren, LEADERBOARD, "Toggle and move the leaderboard");
         add(pm, adminChildren, VOWS_LIST, "List every vow and who has it");
         add(pm, adminChildren, VOWS_MANAGE, "Give and remove player vows");
+        add(pm, adminChildren, INVITES_FORGIVE, "Let Collera invite a player again after their invite ended");
         add(pm, adminChildren, RITUAL, "Start and stop the ritual storm");
         add(pm, adminChildren, UPDATE, "Download plugin updates");
         add(pm, adminChildren, DEBUG, "Testing tools");

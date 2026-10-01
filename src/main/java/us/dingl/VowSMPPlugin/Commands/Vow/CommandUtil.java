@@ -5,12 +5,16 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
+import com.destroystokyo.paper.profile.PlayerProfile;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import us.dingl.VowSMPPlugin.Permissions;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 import us.dingl.VowSMPPlugin.Vows.Vow;
 
+import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public final class CommandUtil {
@@ -43,6 +47,16 @@ public final class CommandUtil {
                     && sender.hasPermission(permission)
                     && vow.isInstance(plugin.getVowManager().getVow(player.getUniqueId()));
         };
+    }
+
+    /// finds a player's uuid by name, even if they've never joined - that may mean asking Mojang, so it
+    /// runs off the main thread. {@code then} runs back on the main thread, with null if there's no such player.
+    public static void lookupUuid(VowSMPPlugin plugin, String name, Consumer<UUID> then) {
+        PlayerProfile profile = Bukkit.createProfile(name);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            boolean found = profile.complete(false);
+            Bukkit.getScheduler().runTask(plugin, () -> then.accept(found ? profile.getId() : null));
+        });
     }
 
     /// resolves an ArgumentTypes.player() argument
