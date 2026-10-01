@@ -34,6 +34,15 @@ public class DeathListener implements Listener {
             }
         }
 
+        // Collera invitees have no lives to lose or drop - dying just ends their invite
+        if (plugin.isInvited(id)) {
+            plugin.removeInvite(id);
+            // kicking mid-death is messy, so wait a tick
+            Bukkit.getScheduler().runTask(plugin, () -> player.kick(
+                    Component.text("You died, so your invite is over.", NamedTextColor.RED)));
+            return;
+        }
+
         int before = plugin.getPlayerLives(id);
         int toLose = plugin.getVowManager().livesLostOnDeath(player, before);
         int remaining = plugin.updatePlayerLifeCounter(id, -toLose);

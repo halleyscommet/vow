@@ -319,6 +319,28 @@ public final class VowSMPPlugin extends JavaPlugin {
         return updated;
     }
 
+    // collera invites
+
+    /// true if this player only got on the server through a Collera invite
+    public boolean isInvited(UUID id) {
+        return getConfig().isSet(ConfigKey.INVITES.getPath() + "." + id);
+    }
+
+    /// whitelists them with 0 lives, so they can't claim or drop any
+    public void addInvite(UUID invitee, UUID inviter) {
+        getConfig().set(ConfigKey.INVITES.getPath() + "." + invitee, inviter.toString());
+        getConfig().set(ConfigKey.PLAYER_LIVES.getPath() + "." + invitee, 0); // addPlayerToLog won't overwrite it
+        saveConfig();
+        Bukkit.getOfflinePlayer(invitee).setWhitelisted(true);
+    }
+
+    /// unwhitelists them and forgets the invite
+    public void removeInvite(UUID invitee) {
+        getConfig().set(ConfigKey.INVITES.getPath() + "." + invitee, null);
+        saveConfig();
+        Bukkit.getOfflinePlayer(invitee).setWhitelisted(false);
+    }
+
     private List<UUID> readUuidList(ConfigKey key) {
         List<UUID> result = new ArrayList<>();
         for (String s : getConfig().getStringList(key.getPath())) {

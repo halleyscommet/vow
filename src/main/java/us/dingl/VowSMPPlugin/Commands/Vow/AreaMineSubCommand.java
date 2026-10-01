@@ -7,7 +7,6 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import us.dingl.VowSMPPlugin.Permissions;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
@@ -25,20 +24,10 @@ public class AreaMineSubCommand implements SubCommand {
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("3x3")
-                .requires(this::canSee)
+                .requires(CommandUtil.vowHolder(plugin, HaleyVow.class, Permissions.AREA_MINE))
                 .executes(ctx -> set(CommandUtil.requirePlayer(ctx), null))
                 .then(Commands.argument("enabled", BoolArgumentType.bool())
                         .executes(ctx -> set(CommandUtil.requirePlayer(ctx), BoolArgumentType.getBool(ctx, "enabled"))));
-    }
-
-    /// only Haley vow holders see the command. Admins see it too, but running it without the vow does nothing.
-    /// VowManager resends a player's commands when their vow changes, so this stays up to date.
-    private boolean canSee(CommandSourceStack source) {
-        CommandSender sender = source.getSender();
-        if (sender.hasPermission(Permissions.ADMIN)) return true;
-        return sender instanceof Player player
-                && sender.hasPermission(Permissions.AREA_MINE)
-                && plugin.getVowManager().getVow(player.getUniqueId()) instanceof HaleyVow;
     }
 
     /// null flips the current setting

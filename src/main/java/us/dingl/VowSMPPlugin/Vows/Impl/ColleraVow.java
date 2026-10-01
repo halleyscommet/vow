@@ -23,7 +23,8 @@ public class ColleraVow extends Vow {
 
     @Override
     public String description() {
-        return "You can add players from off the server, but they only have one life, and you lose 2 lives every death.";
+        return "You can invite players from off the server with /vow invite, but they only have one life, "
+                + "and you lose 2 lives every death.";
     }
 
     @Override
