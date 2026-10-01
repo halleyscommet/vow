@@ -6,6 +6,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.HeightMap;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -20,6 +21,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -31,22 +33,25 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/// burns for 2.5 hearts every second in direct sunlight (after a short grace period), no matter her armor or effects.
+/// takes 2.5 hearts every second she has open sky above her (after a short grace period), no matter her armor,
+/// effects, the weather or the time of day.
 /// In exchange, she gets a soulbound unbreakable Fortune IV diamond pickaxe that mines a 3x3 area while sneaking,
 /// which she can toggle with /vow 3x3.
 public class HaleyVow extends SoulboundItemVow {
 
-    private static final double SUN_DAMAGE = 5.0;
-    /// how long she can be in the sun before the first burn
+    private static final double EXPOSURE_DAMAGE = 5.0;
+    /// how long she can be under open sky before the first hit
     private static final int GRACE_TICKS = 10;
-    private static final int BURN_INTERVAL_TICKS = 20;
+    private static final int DAMAGE_INTERVAL_TICKS = 20;
 
-    /// vow:sunburn from the bundled datapack - ignores armor, protection, resistance and fire resistance
-    private static final NamespacedKey SUNBURN_KEY = new NamespacedKey("vow", "sunburn");
+    /// vow:exposure from the bundled datapack - ignores armor, protection, resistance and fire resistance
+    private static final NamespacedKey EXPOSURE_KEY = new NamespacedKey("vow", "exposure");
 
     private final NamespacedKey areaMiningKey;
-    private final DamageType sunburn;
-    private final Map<UUID, Integer> sunTicks = new HashMap<>();
+    private final DamageType exposure;
+    private final Map<UUID, Integer> exposedTicks = new HashMap<>();
+    /// true while we deal exposure damage, so a death in the middle of it gets our death message
+    private boolean dealingExposure;
     /// true while we break the extra blocks, so those breaks don't trigger another 3x3
     private boolean areaBreaking;
 
@@ -54,16 +59,16 @@ public class HaleyVow extends SoulboundItemVow {
         super(plugin, "haley_pickaxe");
         areaMiningKey = new NamespacedKey(plugin, "haley_area_mining");
 
-        DamageType type = RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).get(SUNBURN_KEY);
+        DamageType type = RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).get(EXPOSURE_KEY);
         if (type == null) {
             // datapack didn't load. generic_kill also ignores armor and effects, but gets past totems too
-            plugin.getLogger().warning("Damage type " + SUNBURN_KEY + " is missing, Haley vow sun damage will use generic_kill");
+            plugin.getLogger().warning("Damage type " + EXPOSURE_KEY + " is missing, Haley vow exposure damage will use generic_kill");
             type = DamageType.GENERIC_KILL;
         }
-        sunburn = type;
+        exposure = type;
 
         // the vow tick is once a second, but the grace period needs tick precision
-        Bukkit.getScheduler().runTaskTimer(plugin, this::sunTick, 1L, 1L);
+        Bukkit.getScheduler().runTaskTimer(plugin, this::exposureTick, 1L, 1L);
     }
 
     @Override
@@ -78,7 +83,7 @@ public class HaleyVow extends SoulboundItemVow {
 
     @Override
     public String description() {
-        return "You take 2.5 hearts every second in the sun, but get a soulbound Fortune IV pickaxe "
+        return "You take 2.5 hearts every second you're under open sky, but get a soulbound Fortune IV pickaxe "
                 + "that mines 3x3 while sneaking (toggle with /vow 3x3).";
     }
 
@@ -101,7 +106,7 @@ public class HaleyVow extends SoulboundItemVow {
     @Override
     public void onLose(Player player) {
         super.onLose(player);
-        sunTicks.remove(player.getUniqueId());
+        exposedTicks.remove(player.getUniqueId());
     }
 
     @Override
@@ -111,43 +116,62 @@ public class HaleyVow extends SoulboundItemVow {
                 .append(Component.text(enabled ? "ON" : "OFF", enabled ? NamedTextColor.GREEN : NamedTextColor.RED));
     }
 
-    // sun
+    // exposure
 
-    private void sunTick() {
+    private void exposureTick() {
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (!has(player)) continue;
 
             UUID id = player.getUniqueId();
-            if (!isInSun(player)) {
-                // stepping into shade resets the grace period
-                sunTicks.remove(id);
+            if (!isExposed(player)) {
+                // getting under cover resets the grace period
+                exposedTicks.remove(id);
                 continue;
             }
 
-            int ticks = sunTicks.merge(id, 1, Integer::sum);
-            if (ticks >= GRACE_TICKS && (ticks - GRACE_TICKS) % BURN_INTERVAL_TICKS == 0) {
-                // a recent hit would otherwise make the burn deal only the difference
+            int ticks = exposedTicks.merge(id, 1, Integer::sum);
+            if (ticks >= GRACE_TICKS && (ticks - GRACE_TICKS) % DAMAGE_INTERVAL_TICKS == 0) {
+                // a recent hit would otherwise make this deal only the difference
                 player.setNoDamageTicks(0);
-                player.damage(SUN_DAMAGE, DamageSource.builder(sunburn).build());
+                dealingExposure = true;
+                try {
+                    player.damage(EXPOSURE_DAMAGE, DamageSource.builder(exposure).build());
+                } finally {
+                    dealingExposure = false;
+                }
             }
         }
     }
 
-    /// same conditions that make zombies burn: daytime, open sky, not in water or rain
-    private boolean isInSun(Player player) {
+    /// true if nothing but air and water is above her head - any time, any weather, any dimension
+    private boolean isExposed(Player player) {
         if (player.isDead()) return false;
         if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) return false;
 
+        Block head = player.getEyeLocation().getBlock();
         World world = player.getWorld();
-        if (world.getEnvironment() != World.Environment.NORMAL || !world.isDayTime()) return false;
-        if (player.isInWater() || player.isInRain()) return false;
+        // the heightmap is the highest non-air block, so above it is all sky. Below it, water still counts
+        // as open (she isn't safe just by swimming), so walk up and look for anything that isn't a fluid.
+        int top = world.getHighestBlockYAt(head.getX(), head.getZ(), HeightMap.WORLD_SURFACE);
+        for (int y = head.getY() + 1; y <= top; y++) {
+            Block block = world.getBlockAt(head.getX(), y, head.getZ());
+            if (!block.isEmpty() && !block.isLiquid() && block.getType() != Material.BUBBLE_COLUMN) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-        return player.getEyeLocation().getBlock().getLightFromSky() == 15;
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onExposureDeath(PlayerDeathEvent event) {
+        if (!dealingExposure || !has(event.getPlayer())) return;
+        event.deathMessage(event.getPlayer().displayName()
+                .append(Component.text(" was claimed by the open sky")));
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        sunTicks.remove(event.getPlayer().getUniqueId());
+        exposedTicks.remove(event.getPlayer().getUniqueId());
     }
 
     // 3x3 mining
