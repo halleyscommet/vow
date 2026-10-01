@@ -1,5 +1,6 @@
 package us.dingl.VowSMPPlugin.Vows;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -43,6 +44,12 @@ public abstract class Vow implements Listener {
     /// Whatever is lost goes to the killer, or drops as life items if they can't take it.
     public int livesLostOnDeath(Player player, int livesBefore, int lost) {
         return lost;
+    }
+
+    /// shown in the player's action bar (next to their lives if they show them). null for nothing.
+    /// Call {@code plugin.getLivesActionBar().update(id)} when it changes so it shows right away.
+    public Component actionBarStatus(Player player) {
+        return null;
     }
 
     /// true if this player currently has this vow - use it to guard @EventHandler methods

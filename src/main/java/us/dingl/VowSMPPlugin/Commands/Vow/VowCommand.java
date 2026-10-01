@@ -20,6 +20,7 @@ public class VowCommand {
     public VowCommand(VowSMPPlugin plugin) {
         subCommands.add(new LivesCommand(plugin));
         subCommands.add(new WithdrawCommand(plugin));
+        subCommands.add(new AreaMineSubCommand(plugin));
         subCommands.add(new VowsSubCommand(plugin));
         subCommands.add(new StatsSubCommand(plugin));
         subCommands.add(new GuiSubCommand(plugin));

@@ -13,6 +13,7 @@ public final class Permissions {
     // everyone
     public static final String LIVES = "vow.lives";
     public static final String WITHDRAW = "vow.withdraw";
+    public static final String AREA_MINE = "vow.3x3";
 
     // ops
     public static final String STATS = "vow.stats";
@@ -32,6 +33,7 @@ public final class Permissions {
     public static void register(PluginManager pm) {
         add(pm, LIVES, PermissionDefault.TRUE, "Check your lives and toggle the action bar");
         add(pm, WITHDRAW, PermissionDefault.TRUE, "Withdraw lives as items");
+        add(pm, AREA_MINE, PermissionDefault.TRUE, "Toggle the Haley vow's 3x3 mining");
 
         Map<String, Boolean> adminChildren = new LinkedHashMap<>();
         add(pm, adminChildren, STATS, "See death and lives stats");

@@ -6,9 +6,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
+import us.dingl.VowSMPPlugin.Vows.Vow;
 
 import java.util.UUID;
 
+/// the lives counter (for players who turned it on) plus any status their vow shows, on one line
 public final class LivesActionBar {
 
     // how often everyone gets refreshed
@@ -42,16 +44,13 @@ public final class LivesActionBar {
 
     public void setEnabled(Player player, boolean enabled) {
         plugin.setPlayerLivesShown(player.getUniqueId(), enabled);
-        if (enabled) {
-            show(player);
-        } else {
-            player.sendActionBar(Component.empty()); // clear it right away
-        }
+        Component text = build(player);
+        // clear it right away when there's nothing left to show
+        player.sendActionBar(text != null ? text : Component.empty());
     }
 
-    /// refreshes one player now (no-op if they're offline or have it turned off)
+    /// refreshes one player now (no-op if they're offline or have nothing to show)
     public void update(UUID id) {
-        if (!plugin.isPlayerLivesShown(id)) return;
         Player player = Bukkit.getPlayer(id);
         if (player != null) {
             show(player);
@@ -59,19 +58,36 @@ public final class LivesActionBar {
     }
 
     public void updateAll() {
-        for (UUID id : plugin.getPlayerLivesShown()) {
-            Player player = Bukkit.getPlayer(id);
-            if (player != null) {
-                show(player);
-            }
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            show(player);
         }
     }
 
     private void show(Player player) {
-        int lives = plugin.getPlayerLives(player.getUniqueId());
-        NamedTextColor color = lives <= 1 ? NamedTextColor.RED
-                : lives == 2 ? NamedTextColor.YELLOW
-                : NamedTextColor.GREEN;
-        player.sendActionBar(Component.text("Lives: " + lives + "/" + VowSMPPlugin.MAX_LIVES, color));
+        // sending nothing (instead of an empty bar) leaves other plugins' action bar messages alone
+        Component text = build(player);
+        if (text != null) {
+            player.sendActionBar(text);
+        }
+    }
+
+    /// null if there's nothing to show
+    private Component build(Player player) {
+        UUID id = player.getUniqueId();
+        Component lives = null;
+        if (plugin.isPlayerLivesShown(id)) {
+            int count = plugin.getPlayerLives(id);
+            NamedTextColor color = count <= 1 ? NamedTextColor.RED
+                    : count == 2 ? NamedTextColor.YELLOW
+                    : NamedTextColor.GREEN;
+            lives = Component.text("Lives: " + count + "/" + VowSMPPlugin.MAX_LIVES, color);
+        }
+
+        Vow vow = plugin.getVowManager().getVow(id);
+        Component status = vow == null ? null : vow.actionBarStatus(player);
+
+        if (lives == null) return status;
+        if (status == null) return lives;
+        return lives.append(Component.text("  |  ", NamedTextColor.DARK_GRAY)).append(status);
     }
 }
