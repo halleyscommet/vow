@@ -70,6 +70,8 @@ public class VowManager {
         if (player != null) {
             if (old != null) old.onLose(player);
             if (vow != null) vow.onGain(player);
+            // some commands are only visible with certain vows (like /vow 3x3)
+            player.updateCommands();
         }
 
         plugin.getConfig().set(ConfigKey.PLAYER_VOWS.getPath() + "." + id, vow == null ? null : vow.id());
