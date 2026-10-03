@@ -30,6 +30,7 @@ import us.dingl.VowSMPPlugin.Vows.Impl.CharlotteVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.ColleraVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.GoodwyllVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.HaleyVow;
+import us.dingl.VowSMPPlugin.Vows.Impl.HarperVow;
 import us.dingl.VowSMPPlugin.Vows.VowManager;
 
 import java.util.*;
@@ -381,6 +382,7 @@ public final class VowSMPPlugin extends JavaPlugin {
         vowManager.register(new CharlotteVow(this));
         vowManager.register(new ColleraVow(this));
         vowManager.register(new HaleyVow(this));
+        vowManager.register(new HarperVow(this));
         // new vows go here
     }
 
