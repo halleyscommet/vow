@@ -42,7 +42,7 @@ import java.util.UUID;
 public class HarperVow extends Vow {
 
     private static final double JUMP_UP = 0.65;
-    private static final double JUMP_FORWARD = 0.4;
+    private static final double JUMP_FORWARD = 0.7;
     private static final int COOLDOWN_TICKS = 5 * 20;
     /// both presses have to land this close together, same as vanilla's double tap to fly
     private static final int DOUBLE_TAP_TICKS = 7;
