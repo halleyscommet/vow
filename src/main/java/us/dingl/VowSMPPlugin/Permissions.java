@@ -15,6 +15,7 @@ public final class Permissions {
     public static final String WITHDRAW = "vow.withdraw";
     public static final String AREA_MINE = "vow.3x3";
     public static final String INVITE = "vow.invite";
+    public static final String RESISTANCE = "vow.res";
 
     // ops
     public static final String STATS = "vow.stats";
@@ -37,6 +38,7 @@ public final class Permissions {
         add(pm, WITHDRAW, PermissionDefault.TRUE, "Withdraw lives as items");
         add(pm, AREA_MINE, PermissionDefault.TRUE, "Toggle the Haley vow's 3x3 mining");
         add(pm, INVITE, PermissionDefault.TRUE, "Invite players with the Collera vow");
+        add(pm, RESISTANCE, PermissionDefault.TRUE, "Use the Karma vow's resistance");
 
         Map<String, Boolean> adminChildren = new LinkedHashMap<>();
         add(pm, adminChildren, STATS, "See death and lives stats");

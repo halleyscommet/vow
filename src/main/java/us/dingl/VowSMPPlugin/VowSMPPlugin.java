@@ -9,6 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.plugin.java.JavaPlugin;
 import us.dingl.VowSMPPlugin.Commands.LivesCommand;
+import us.dingl.VowSMPPlugin.Commands.Vow.ResistanceSubCommand;
 import us.dingl.VowSMPPlugin.Commands.Vow.VowCommand;
 import us.dingl.VowSMPPlugin.Commands.WithdrawCommand;
 import us.dingl.VowSMPPlugin.Gui.GuiManager;
@@ -31,6 +32,7 @@ import us.dingl.VowSMPPlugin.Vows.Impl.ColleraVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.GoodwyllVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.HaleyVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.HarperVow;
+import us.dingl.VowSMPPlugin.Vows.Impl.KarmaVow;
 import us.dingl.VowSMPPlugin.Vows.VowManager;
 
 import java.util.*;
@@ -383,6 +385,7 @@ public final class VowSMPPlugin extends JavaPlugin {
         vowManager.register(new ColleraVow(this));
         vowManager.register(new HaleyVow(this));
         vowManager.register(new HarperVow(this));
+        vowManager.register(new KarmaVow(this));
         // new vows go here
     }
 
@@ -392,6 +395,7 @@ public final class VowSMPPlugin extends JavaPlugin {
             registrar.register(new VowCommand(this).build(), "Vow SMP commands");
             registrar.register(new WithdrawCommand(this).build().build(), "Withdraw lives as items");
             registrar.register(new LivesCommand(this).build().build(), "Get lives or show an actionbar");
+            registrar.register(new ResistanceSubCommand(this).build().build(), "Use the Karma vow's resistance");
         });
     }
 
