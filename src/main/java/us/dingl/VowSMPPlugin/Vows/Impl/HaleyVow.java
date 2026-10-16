@@ -22,6 +22,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -83,18 +84,18 @@ public class HaleyVow extends SoulboundItemVow {
 
     @Override
     public String description() {
-        return "You take 2.5 hearts every second you're under open sky, but get a soulbound Fortune IV pickaxe "
+        return "You take 2.5 hearts every second you're under open sky, but get a soulbound Fortune IV netherite pickaxe "
                 + "that mines 3x3 while sneaking (toggle with /vow 3x3).";
     }
 
     @Override
     public Material icon() {
-        return Material.DIAMOND_PICKAXE;
+        return Material.NETHERITE_PICKAXE;
     }
 
     @Override
     protected ItemStack buildItem() {
-        ItemStack pickaxe = new ItemStack(Material.DIAMOND_PICKAXE);
+        ItemStack pickaxe = new ItemStack(Material.NETHERITE_PICKAXE);
         pickaxe.editMeta(meta -> {
             // unsafe because fortune normally caps at III
             meta.addEnchant(Enchantment.FORTUNE, 4, true);
@@ -107,6 +108,19 @@ public class HaleyVow extends SoulboundItemVow {
     public void onLose(Player player) {
         super.onLose(player);
         exposedTicks.remove(player.getUniqueId());
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        // the pickaxe used to be diamond, so upgrade any old one (keeps its enchants and tag)
+        Player player = event.getPlayer();
+        ItemStack[] contents = player.getInventory().getContents();
+        for (int slot = 0; slot < contents.length; slot++) {
+            ItemStack item = contents[slot];
+            if (isSoulbound(item) && item.getType() == Material.DIAMOND_PICKAXE) {
+                player.getInventory().setItem(slot, item.withType(Material.NETHERITE_PICKAXE));
+            }
+        }
     }
 
     @Override
