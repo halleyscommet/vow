@@ -1,5 +1,7 @@
 package us.dingl.VowSMPPlugin.Vows.Impl;
 
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -14,7 +16,6 @@ import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
@@ -56,21 +57,31 @@ public class GuruVow extends SoulboundItemVow {
     /// how often the action bar counts down
     private static final long COOLDOWN_DISPLAY_TICKS = 2L;
 
+    /// vow:smite from the bundled datapack - ignores armor, protection and shields, and never scales with difficulty
+    private static final NamespacedKey SMITE_KEY = new NamespacedKey("vow", "smite");
+
     private static final Component ITEM_NAME = Component.text("Smite", NamedTextColor.YELLOW)
             .decoration(TextDecoration.ITALIC, false);
 
     /// set on the player once his ritual is done. Kept in his own data so it survives restarts.
     private final NamespacedKey awakenedKey;
     private final NamespacedKey cooldownGroup;
+    private final DamageType smiteDamage;
     /// server tick his smite is ready again. Item cooldowns reset on relog, so track it here too.
     private final Map<UUID, Integer> readyAt = new HashMap<>();
-    /// who each player was last smitten by, to fix up the death message
-    private final Map<UUID, UUID> lastSmittenBy = new HashMap<>();
 
     public GuruVow(VowSMPPlugin plugin) {
         super(plugin, "guru_smite");
         awakenedKey = new NamespacedKey(plugin, "guru_awakened");
         cooldownGroup = new NamespacedKey(plugin, "guru_smite");
+
+        DamageType type = RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).get(SMITE_KEY);
+        if (type == null) {
+            // datapack didn't load. magic also ignores armor and doesn't scale, but protection reduces it
+            plugin.getLogger().warning("Damage type " + SMITE_KEY + " is missing, Guru vow smite will use magic");
+            type = DamageType.MAGIC;
+        }
+        smiteDamage = type;
 
         // the lives bar only refreshes every 2 seconds, so count the cooldown down ourselves
         Bukkit.getScheduler().runTaskTimer(plugin, this::cooldownTick, COOLDOWN_DISPLAY_TICKS, COOLDOWN_DISPLAY_TICKS);
@@ -209,20 +220,6 @@ public class GuruVow extends SoulboundItemVow {
         plugin.getLivesActionBar().update(player.getUniqueId());
     }
 
-    @EventHandler
-    public void onDeath(PlayerDeathEvent event) {
-        // smite deals sonic boom damage (the only kind that skips armor and protection without skipping totems),
-        // so swap out the warden death message
-        Player victim = event.getPlayer();
-        UUID guruId = lastSmittenBy.remove(victim.getUniqueId());
-        DamageSource source = event.getDamageSource();
-        if (guruId == null || source.getDamageType() != DamageType.SONIC_BOOM
-                || source.getCausingEntity() == null || !source.getCausingEntity().getUniqueId().equals(guruId)) {
-            return;
-        }
-        event.deathMessage(Component.text(victim.getName() + " was smitten by " + source.getCausingEntity().getName()));
-    }
-
     /// the closest player whose (slightly padded) hitbox is under his crosshair, within range and in sight
     private Player findTarget(Player guru) {
         Vector eye = guru.getEyeLocation().toVector();
@@ -254,8 +251,7 @@ public class GuruVow extends SoulboundItemVow {
 
         // a hit just before shouldn't eat the damage through invulnerability frames
         target.setNoDamageTicks(0);
-        lastSmittenBy.put(target.getUniqueId(), guru.getUniqueId());
-        target.damage(DAMAGE, DamageSource.builder(DamageType.SONIC_BOOM)
+        target.damage(DAMAGE, DamageSource.builder(smiteDamage)
                 .withCausingEntity(guru)
                 .withDirectEntity(guru)
                 .build());

@@ -1,19 +1,15 @@
 package us.dingl.VowSMPPlugin.Vows.Impl;
 
+import com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
-import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.WindCharge;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.components.UseCooldownComponent;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 import us.dingl.VowSMPPlugin.Vows.SoulboundItemVow;
 
@@ -23,19 +19,16 @@ import java.util.Map;
 import java.util.UUID;
 
 /// gives a Sharpness I, Breach IV diamond sword that stays in his inventory when he dies.
-/// Right clicking with it shoots a wind charge on a 5 second cooldown.
+/// His wind charges have a 5 second cooldown instead of vanilla's half second.
 public class ColleraVow extends SoulboundItemVow {
 
     private static final int COOLDOWN_TICKS = 5 * 20;
 
-    /// the sword's own cooldown group, so the cooldown shows on it without touching other diamond swords
-    private final NamespacedKey cooldownGroup;
-    /// server tick his wind charge is ready again. Item cooldowns reset on relog, so track it here too.
+    /// server tick his wind charges are ready again. Item cooldowns reset on relog, so track it here too.
     private final Map<UUID, Integer> readyAt = new HashMap<>();
 
     public ColleraVow(VowSMPPlugin plugin) {
         super(plugin, "collera_sword");
-        cooldownGroup = new NamespacedKey(plugin, "collera_wind_charge");
     }
 
     @Override
@@ -51,7 +44,7 @@ public class ColleraVow extends SoulboundItemVow {
     @Override
     public String description() {
         return "Gives a Sharpness I, Breach IV diamond sword that you keep when you die and can't drop or store. "
-                + "Right click with it to shoot a wind charge (5 second cooldown).";
+                + "Your wind charges have a 5 second cooldown.";
     }
 
     @Override
@@ -66,10 +59,6 @@ public class ColleraVow extends SoulboundItemVow {
             meta.addEnchant(Enchantment.SHARPNESS, 1, true);
             // unsafe because breach normally only goes on maces
             meta.addEnchant(Enchantment.BREACH, 4, true);
-            UseCooldownComponent cooldown = meta.getUseCooldown();
-            cooldown.setCooldownSeconds(COOLDOWN_TICKS / 20f);
-            cooldown.setCooldownGroup(cooldownGroup);
-            meta.setUseCooldown(cooldown);
         });
         return sword;
     }
@@ -77,7 +66,10 @@ public class ColleraVow extends SoulboundItemVow {
     @Override
     public void onLose(Player player) {
         super.onLose(player);
-        readyAt.remove(player.getUniqueId());
+        // back to vanilla's cooldown (anything left is at most 5 seconds anyway)
+        if (readyAt.remove(player.getUniqueId()) != null) {
+            player.setCooldown(Material.WIND_CHARGE, 0);
+        }
     }
 
     @EventHandler
@@ -91,33 +83,35 @@ public class ColleraVow extends SoulboundItemVow {
             onGain(player);
         }
 
-        // put the cooldown back on the sword after a relog
+        // put the cooldown back on his wind charges after a relog
         int remaining = remainingCooldown(player);
         if (remaining > 0) {
-            player.setCooldown(cooldownGroup, remaining);
+            player.setCooldown(Material.WIND_CHARGE, remaining);
         }
     }
 
-    @EventHandler
-    public void onRightClick(PlayerInteractEvent event) {
-        Action action = event.getAction();
-        if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return;
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onThrow(PlayerLaunchProjectileEvent event) {
+        if (!(event.getProjectile() instanceof WindCharge)) return;
         Player player = event.getPlayer();
-        if (!isSoulbound(event.getItem()) || !has(player)) return;
+        if (!has(player)) return;
 
-        // let him open doors and chests with the sword out, unless he's sneaking like vanilla
-        Block block = event.getClickedBlock();
-        if (action == Action.RIGHT_CLICK_BLOCK && block != null && block.getType().isInteractable() && !player.isSneaking()) {
+        // the item cooldown already blocks throws, this is a backup for anything that resets it
+        int remaining = remainingCooldown(player);
+        if (remaining > 0) {
+            event.setCancelled(true);
+            player.setCooldown(Material.WIND_CHARGE, remaining);
             return;
         }
 
-        if (remainingCooldown(player) > 0) return;
-
-        player.launchProjectile(WindCharge.class);
-        player.getWorld().playSound(player, Sound.ENTITY_WIND_CHARGE_THROW, 0.5f, 0.4f);
         readyAt.put(player.getUniqueId(), Bukkit.getCurrentTick() + COOLDOWN_TICKS);
-        player.setCooldown(cooldownGroup, COOLDOWN_TICKS);
-        player.swingHand(event.getHand());
+        // vanilla sets its half second cooldown right after this event, so ours goes on next tick
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            int left = remainingCooldown(player);
+            if (left > 0 && player.isOnline() && has(player)) {
+                player.setCooldown(Material.WIND_CHARGE, left);
+            }
+        });
     }
 
     private int remainingCooldown(Player player) {
