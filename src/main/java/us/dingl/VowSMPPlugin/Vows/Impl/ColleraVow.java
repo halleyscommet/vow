@@ -1,6 +1,8 @@
 package us.dingl.VowSMPPlugin.Vows.Impl;
 
 import com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -23,6 +25,7 @@ import java.util.UUID;
 public class ColleraVow extends SoulboundItemVow {
 
     private static final int COOLDOWN_TICKS = 5 * 20;
+    private static final Component SWORD_NAME = Component.text("Murasama").color(NamedTextColor.RED);
 
     /// server tick his wind charges are ready again. Item cooldowns reset on relog, so track it here too.
     private final Map<UUID, Integer> readyAt = new HashMap<>();
@@ -49,7 +52,7 @@ public class ColleraVow extends SoulboundItemVow {
 
     @Override
     public Material icon() {
-        return Material.WIND_CHARGE;
+        return Material.DIAMOND_SWORD;
     }
 
     @Override
@@ -59,6 +62,8 @@ public class ColleraVow extends SoulboundItemVow {
             meta.addEnchant(Enchantment.SHARPNESS, 1, true);
             // unsafe because breach normally only goes on maces
             meta.addEnchant(Enchantment.BREACH, 4, true);
+            meta.setUnbreakable(true);
+            meta.customName(SWORD_NAME);
         });
         return sword;
     }
@@ -75,6 +80,20 @@ public class ColleraVow extends SoulboundItemVow {
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+
+        // the sword used to be breakable with no name, so upgrade any old one (keeps its enchants and tag)
+        ItemStack[] contents = player.getInventory().getContents();
+        for (int slot = 0; slot < contents.length; slot++) {
+            ItemStack item = contents[slot];
+            if (isSoulbound(item) && !item.getItemMeta().isUnbreakable()) {
+                item.editMeta(meta -> {
+                    meta.setUnbreakable(true);
+                    meta.customName(SWORD_NAME);
+                });
+                player.getInventory().setItem(slot, item);
+            }
+        }
+
         if (!has(player)) return;
 
         // Collera used to be a different vow, so anyone who had it before the sword was added gets it now
