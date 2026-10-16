@@ -22,8 +22,6 @@ public class VowCommand {
         subCommands.add(new WithdrawCommand(plugin));
         subCommands.add(new AreaMineSubCommand(plugin));
         subCommands.add(new ResistanceSubCommand(plugin));
-        subCommands.add(new InviteSubCommand(plugin));
-        subCommands.add(new ForgiveSubCommand(plugin));
         subCommands.add(new VowsSubCommand(plugin));
         subCommands.add(new StatsSubCommand(plugin));
         subCommands.add(new GuiSubCommand(plugin));

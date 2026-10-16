@@ -40,6 +40,9 @@ public abstract class Vow implements Listener {
     /// give potion effects a slightly longer duration than a second so they don't blink off.
     public void tick(Player player, int lives) {}
 
+    /// the player just finished a resurrection ritual (after they got their lives back)
+    public void onRitualComplete(Player player) {}
+
     /// how many lives the player loses on this death. {@code lost} is the default (1).
     /// Whatever is lost goes to the killer, or drops as life items if they can't take it.
     public int livesLostOnDeath(Player player, int livesBefore, int lost) {

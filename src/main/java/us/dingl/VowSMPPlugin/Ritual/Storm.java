@@ -16,6 +16,7 @@ import org.bukkit.scheduler.BukkitTask;
 import org.joml.Matrix4f;
 import us.dingl.VowSMPPlugin.Items.RitualItem;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
+import us.dingl.VowSMPPlugin.Vows.Vow;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -230,6 +231,10 @@ public final class Storm {
     public void reward(Player player) {
         plugin.updatePlayerLifeCounter(player.getUniqueId(), 3);
         player.sendMessage(Component.text("Congrats! You now have 3 lives!", NamedTextColor.GREEN));
+        Vow vow = plugin.getVowManager().getVow(player.getUniqueId());
+        if (vow != null) {
+            vow.onRitualComplete(player);
+        }
         Bukkit.broadcast(Component.text("The revival for ").append(Component.text(player.getName()).color(NamedTextColor.DARK_GREEN).decorate(TextDecoration.ITALIC, TextDecoration.BOLD)).append(Component.text(" has been finished!")));
 
         Location tpTo = player.getRespawnLocation();

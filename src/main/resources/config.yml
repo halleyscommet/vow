@@ -10,7 +10,5 @@ logged-players: []
 killed-players: []
 player-lives: {}
 player-vows: {}
-# invited player uuid -> uuid of the Collera who invited them
+# invited player uuid -> uuid of the Collera who invited them (from before Collera lost /vow invite)
 invites: {}
-# players an admin forgave with /vow forgive, so Collera can invite them again
-forgiven-invites: []
