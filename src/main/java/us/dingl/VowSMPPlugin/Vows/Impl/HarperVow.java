@@ -15,6 +15,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.player.PlayerInputEvent;
@@ -32,11 +33,14 @@ import us.dingl.VowSMPPlugin.VowSMPPlugin;
 import us.dingl.VowSMPPlugin.Vows.Vow;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /// double jump (double tap space in the air) on a 5 second cooldown, shown in the action bar.
+/// She takes no fall damage when landing from a double jump.
 /// In exchange, she has 8 hearts instead of 10, can't use bows or crossbows, and can never be invisible.
 /// (Traps are also banned, but admins enforce that.)
 public class HarperVow extends Vow {
@@ -57,6 +61,8 @@ public class HarperVow extends Vow {
     private final Map<UUID, Integer> lastJumpPress = new HashMap<>();
     /// server tick her double jump is ready again
     private final Map<UUID, Integer> readyAt = new HashMap<>();
+    /// players who double jumped and haven't landed yet, so the landing doesn't hurt
+    private final Set<UUID> midJump = new HashSet<>();
 
     public HarperVow(VowSMPPlugin plugin) {
         super(plugin);
@@ -78,7 +84,7 @@ public class HarperVow extends Vow {
 
     @Override
     public String description() {
-        return "Double tap space to double jump (5 second cooldown), but you only have 8 hearts, "
+        return "Double tap space to double jump (5 second cooldown, no fall damage), but you only have 8 hearts, "
                 + "can't use bows or crossbows, and can never use traps or invisibility.";
     }
 
@@ -98,6 +104,7 @@ public class HarperVow extends Vow {
         removeHealthPenalty(player);
         lastJumpPress.remove(player.getUniqueId());
         readyAt.remove(player.getUniqueId());
+        midJump.remove(player.getUniqueId());
     }
 
     @Override
@@ -134,6 +141,7 @@ public class HarperVow extends Vow {
         // so a third tap doesn't count as another double tap
         lastJumpPress.remove(id);
         readyAt.put(id, now + COOLDOWN_TICKS);
+        midJump.add(id);
 
         Vector forward = player.getLocation().getDirection().setY(0);
         if (forward.lengthSquared() > 0) {
@@ -160,6 +168,14 @@ public class HarperVow extends Vow {
     }
 
     private void cooldownTick() {
+        // landing is handled before scheduled tasks run, so any fall damage has already been cancelled by now.
+        // anything that resets fall distance counts as landing too
+        midJump.removeIf(id -> {
+            Player player = Bukkit.getPlayer(id);
+            return player == null || player.isOnGround() || player.isInWater() || player.isClimbing()
+                    || player.isFlying() || player.isGliding() || player.isInsideVehicle();
+        });
+
         int now = Bukkit.getCurrentTick();
         // keep each player in the map for one more refresh after it runs out, so the bar flips to READY right away
         readyAt.entrySet().removeIf(entry -> {
@@ -168,9 +184,18 @@ public class HarperVow extends Vow {
         });
     }
 
+    @EventHandler(ignoreCancelled = true)
+    public void onFallDamage(EntityDamageEvent event) {
+        if (event.getCause() != EntityDamageEvent.DamageCause.FALL) return;
+        if (event.getEntity() instanceof Player player && midJump.remove(player.getUniqueId())) {
+            event.setCancelled(true);
+        }
+    }
+
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         lastJumpPress.remove(event.getPlayer().getUniqueId());
+        midJump.remove(event.getPlayer().getUniqueId());
     }
 
     // 8 hearts
