@@ -262,6 +262,20 @@ public final class VowSMPPlugin extends JavaPlugin {
         return true;
     }
 
+    /// puts a player back on the immortals list. Returns false if they were already on it.
+    public boolean revivePlayer(UUID id) {
+        boolean wasImmortal = getPlayersNotYetKilled().contains(id);
+        addPlayerToLog(id);
+
+        List<String> killed = new ArrayList<>(getConfig().getStringList(ConfigKey.KILLED_PLAYERS.getPath()));
+        if (killed.remove(id.toString())) {
+            getConfig().set(ConfigKey.KILLED_PLAYERS.getPath(), killed);
+            saveConfig();
+            leaderboard.refresh();
+        }
+        return !wasImmortal;
+    }
+
     private void loadLivesShown() {
         livesShown.clear();
         livesShown.addAll(readUuidList(ConfigKey.LIVES_SHOWN)); // skips invalid UUIDs with a warning
