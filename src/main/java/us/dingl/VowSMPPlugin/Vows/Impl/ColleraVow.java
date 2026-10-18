@@ -1,34 +1,25 @@
 package us.dingl.VowSMPPlugin.Vows.Impl;
 
-import com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.WindCharge;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 import us.dingl.VowSMPPlugin.Vows.SoulboundItemVow;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 /// gives a Sharpness I, Breach IV diamond sword that stays in his inventory when he dies.
-/// His wind charges have a 5 second cooldown instead of vanilla's half second.
+/// His helmet and boots can't go above Protection II - anything higher gets downgraded while he wears it.
 public class ColleraVow extends SoulboundItemVow {
 
-    private static final int COOLDOWN_TICKS = 5 * 20;
+    private static final int MAX_PROTECTION = 2;
     private static final Component SWORD_NAME = Component.text("Murasama").color(NamedTextColor.RED);
-
-    /// server tick his wind charges are ready again. Item cooldowns reset on relog, so track it here too.
-    private final Map<UUID, Integer> readyAt = new HashMap<>();
 
     public ColleraVow(VowSMPPlugin plugin) {
         super(plugin, "collera_sword");
@@ -47,7 +38,7 @@ public class ColleraVow extends SoulboundItemVow {
     @Override
     public String description() {
         return "Gives a Sharpness I, Breach IV diamond sword that you keep when you die and can't drop or store. "
-                + "Your wind charges have a 5 second cooldown.";
+                + "Your helmet and boots can't go above Protection II.";
     }
 
     @Override
@@ -69,12 +60,10 @@ public class ColleraVow extends SoulboundItemVow {
     }
 
     @Override
-    public void onLose(Player player) {
-        super.onLose(player);
-        // back to vanilla's cooldown (anything left is at most 5 seconds anyway)
-        if (readyAt.remove(player.getUniqueId()) != null) {
-            player.setCooldown(Material.WIND_CHARGE, 0);
-        }
+    public void tick(Player player, int lives) {
+        // checking every second catches every way armor gets on (equipping, anvils, dispensers...)
+        capProtection(player, EquipmentSlot.HEAD);
+        capProtection(player, EquipmentSlot.FEET);
     }
 
     @EventHandler
@@ -101,40 +90,14 @@ public class ColleraVow extends SoulboundItemVow {
         if (!hasSword) {
             onGain(player);
         }
-
-        // put the cooldown back on his wind charges after a relog
-        int remaining = remainingCooldown(player);
-        if (remaining > 0) {
-            player.setCooldown(Material.WIND_CHARGE, remaining);
-        }
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onThrow(PlayerLaunchProjectileEvent event) {
-        if (!(event.getProjectile() instanceof WindCharge)) return;
-        Player player = event.getPlayer();
-        if (!has(player)) return;
+    /// only lowers protection that's too high - armor without it is left alone
+    private void capProtection(Player player, EquipmentSlot slot) {
+        ItemStack item = player.getInventory().getItem(slot);
+        if (item.getEnchantmentLevel(Enchantment.PROTECTION) <= MAX_PROTECTION) return;
 
-        // the item cooldown already blocks throws, this is a backup for anything that resets it
-        int remaining = remainingCooldown(player);
-        if (remaining > 0) {
-            event.setCancelled(true);
-            player.setCooldown(Material.WIND_CHARGE, remaining);
-            return;
-        }
-
-        readyAt.put(player.getUniqueId(), Bukkit.getCurrentTick() + COOLDOWN_TICKS);
-        // vanilla sets its half second cooldown right after this event, so ours goes on next tick
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            int left = remainingCooldown(player);
-            if (left > 0 && player.isOnline() && has(player)) {
-                player.setCooldown(Material.WIND_CHARGE, left);
-            }
-        });
-    }
-
-    private int remainingCooldown(Player player) {
-        Integer ready = readyAt.get(player.getUniqueId());
-        return ready == null ? 0 : ready - Bukkit.getCurrentTick();
+        item.editMeta(meta -> meta.addEnchant(Enchantment.PROTECTION, MAX_PROTECTION, true));
+        player.getInventory().setItem(slot, item);
     }
 }
