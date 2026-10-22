@@ -38,8 +38,17 @@ import us.dingl.VowSMPPlugin.Vows.Impl.IceVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.KarmaVow;
 import us.dingl.VowSMPPlugin.Vows.VowManager;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 public final class VowSMPPlugin extends JavaPlugin {
 
@@ -126,6 +135,29 @@ public final class VowSMPPlugin extends JavaPlugin {
             livesActionBar.stop();
         }
         getLogger().info("Vow SMP Plugin has been disabled!");
+    }
+
+    /// config.yml holds every player's lives and vows, so never write it in place - a crash mid-write
+    /// would leave it half written. Write a temp file, flush it to disk, then swap it in all at once.
+    @Override
+    public void saveConfig() {
+        Path target = getDataFolder().toPath().resolve("config.yml");
+        Path temp = target.resolveSibling("config.yml.tmp");
+        ByteBuffer data = ByteBuffer.wrap(getConfig().saveToString().getBytes(StandardCharsets.UTF_8));
+
+        try {
+            Files.createDirectories(target.getParent());
+            try (FileChannel channel = FileChannel.open(temp, StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
+                while (data.hasRemaining()) {
+                    channel.write(data);
+                }
+                channel.force(true); // so a power cut can't swap in a file whose contents never hit the disk
+            }
+            Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            getLogger().log(Level.SEVERE, "Could not save " + target, e);
+        }
     }
 
     public HeadCache getHeadCache() {
