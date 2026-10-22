@@ -34,6 +34,7 @@ import us.dingl.VowSMPPlugin.Vows.Impl.GoodwyllVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.GuruVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.HaleyVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.HarperVow;
+import us.dingl.VowSMPPlugin.Vows.Impl.IceVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.KarmaVow;
 import us.dingl.VowSMPPlugin.Vows.VowManager;
 
@@ -376,6 +377,7 @@ public final class VowSMPPlugin extends JavaPlugin {
         vowManager.register(new KarmaVow(this));
         vowManager.register(new AuroraVow(this));
         vowManager.register(new GuruVow(this));
+        vowManager.register(new IceVow(this));
         // new vows go here
     }
 

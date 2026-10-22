@@ -24,9 +24,10 @@ import org.bukkit.persistence.PersistentDataType;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 
 import java.util.Iterator;
+import java.util.List;
 
-/// a vow that comes with one soulbound item: given on gain, removed on loss, kept on death,
-/// and it can't be dropped or stored anywhere (chests, bundles, item frames...) so it never leaves her inventory.
+/// a vow that comes with soulbound items (usually just one): given on gain, removed on loss, kept on death,
+/// and they can't be dropped or stored anywhere (chests, bundles, item frames...) so they never leave the player's inventory.
 public abstract class SoulboundItemVow extends Vow {
 
     private final NamespacedKey itemKey;
@@ -38,16 +39,31 @@ public abstract class SoulboundItemVow extends Vow {
     }
 
     /// build the item. It gets tagged as soulbound automatically.
-    protected abstract ItemStack buildItem();
+    /// Vows with more than one item override {@link #buildItems()} instead.
+    protected ItemStack buildItem() {
+        throw new UnsupportedOperationException(id() + " has to override buildItem or buildItems");
+    }
+
+    /// every soulbound item this vow gives. Each gets tagged as soulbound automatically.
+    protected List<ItemStack> buildItems() {
+        return List.of(buildItem());
+    }
+
+    /// hands one of the (already tagged) items to the player. Override to put it somewhere specific.
+    protected void giveItem(Player player, ItemStack item) {
+        player.give(item);
+    }
 
     @Override
     public void onGain(Player player) {
-        player.give(createItem());
+        for (ItemStack item : buildItems()) {
+            giveItem(player, tag(item));
+        }
     }
 
     @Override
     public void onLose(Player player) {
-        // the item belongs to the vow, so it goes away with it (includes offhand)
+        // the item belongs to the vow, so it goes away with it (includes offhand and armor)
         ItemStack[] contents = player.getInventory().getContents();
         for (int slot = 0; slot < contents.length; slot++) {
             if (isSoulbound(contents[slot])) {
@@ -164,8 +180,7 @@ public abstract class SoulboundItemVow extends Vow {
         }
     }
 
-    private ItemStack createItem() {
-        ItemStack item = buildItem();
+    private ItemStack tag(ItemStack item) {
         item.editMeta(meta -> meta.getPersistentDataContainer().set(itemKey, PersistentDataType.BYTE, (byte) 1));
         return item;
     }
