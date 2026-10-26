@@ -106,8 +106,8 @@ public final class AdminMenus {
                 .title("Vow Admin")
                 .pattern(
                         "#########",
-                        "#PVM#LTS#",
-                        "#######RU")
+                        "#PVM#LSR#",
+                        "########U")
                 .bind('#', filler())
                 .bind('P', Button.of(item(Material.PLAYER_HEAD, "<gold><b>Players",
                         "<gray>Lives, vows and immortals"), ctx -> navigate(ctx, players)))
@@ -116,24 +116,24 @@ public final class AdminMenus {
                 .bind('M', Button.of(item(Material.NETHER_STAR, "<yellow><b>Mythics",
                         "<gray>Who holds each mythic"), ctx -> navigate(ctx, mythics)))
                 .bind('L', Button.builder()
-                        .item(ctx -> plugin.getLeaderboardEnabled()
-                                ? item(Material.REDSTONE, "<dark_red><b>Disable Leaderboard")
-                                : item(Material.EMERALD, "<dark_green><b>Enable Leaderboard"))
-                        .onClick(ctx -> {
-                            (plugin.toggleLeaderboard() ? UiSound.ON : UiSound.OFF).play(ctx.player());
-                            ctx.refresh();
-                        })
-                        .build())
-                .bind('T', Button.builder()
                         .item(ctx -> {
+                            boolean enabled = plugin.getLeaderboardEnabled();
                             Location pos = plugin.getLeaderboardLocation();
                             String coords = pos == null ? "unknown"
                                     : pos.getBlockX() + " " + pos.getBlockY() + " " + pos.getBlockZ();
-                            return item(Material.PAPER, "<white>Move Leaderboard Here",
-                                    "<gray>Currently at " + coords,
-                                    "<gray>Moves it above the block you're looking at");
+                            return item(Material.OAK_SIGN,
+                                    enabled ? "<gold><b>Leaderboard: <green>On" : "<gold><b>Leaderboard: <red>Off",
+                                    "<gray>At " + coords,
+                                    "",
+                                    "<gray>Left click: <white>turn " + (enabled ? "off" : "on"),
+                                    "<gray>Right click: <white>move above the block",
+                                    "<gray>you're looking at");
                         })
-                        .onClick(ctx -> {
+                        .on(ClickKind.LEFT, ctx -> {
+                            (plugin.toggleLeaderboard() ? UiSound.ON : UiSound.OFF).play(ctx.player());
+                            ctx.refresh();
+                        })
+                        .on(ClickKind.RIGHT, ctx -> {
                             Player viewer = ctx.player();
                             Block target = viewer.getTargetBlockExact(5);
                             Location location = target != null ? target.getLocation() : viewer.getLocation();
@@ -169,8 +169,8 @@ public final class AdminMenus {
                             if (pack.problem() != null) lore.add("<red>Nothing is being sent: " + pack.problem());
                             lore.add("<gray>Click to switch to " + (release ? "config" : "release"));
                             lore.add("<gray>(resends it to everyone online)");
-                            return item(Material.PAINTING, "<gold><b>Resource Pack: " + (release ? "Release" : "Config"),
-                                    lore.toArray(String[]::new));
+                            return ui("ui_resource_pack", item(Material.PAINTING,
+                                    "<gold><b>Resource Pack: " + (release ? "Release" : "Config"), lore.toArray(String[]::new)));
                         })
                         .onClick(ctx -> {
                             ResourcePackListener packs = plugin.getResourcePackListener();
@@ -180,10 +180,10 @@ public final class AdminMenus {
                             ctx.refresh();
                         })
                         .build())
-                .bind('U', Button.of(ctx -> item(Material.RECOVERY_COMPASS, "<aqua><b>Check for Updates",
+                .bind('U', Button.of(ctx -> ui("ui_update", item(Material.RECOVERY_COMPASS, "<aqua><b>Check for Updates",
                         "<gray>Current version: " + plugin.getPluginMeta().getVersion(),
                         "<gray>Downloads the latest release,",
-                        "<gray>then restart to apply it"), ctx -> {
+                        "<gray>then restart to apply it")), ctx -> {
                     // chat is hidden behind the menu, so close it to show the progress
                     UiSound.CLICK.play(ctx.player());
                     ctx.close();
