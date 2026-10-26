@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
@@ -11,17 +12,20 @@ import org.bukkit.block.ShulkerBox;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.BundleMeta;
 import org.bukkit.persistence.PersistentDataType;
 import us.dingl.VowSMPPlugin.ConfigKey;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -31,9 +35,15 @@ import java.util.function.BiConsumer;
 /// memory and mirrored to config. Holders are found by scanning online inventories once a second, so the
 /// holder is whoever had it last - putting it in a chest doesn't change that, someone else taking it does.
 /// Changing hands can announce it in chat and play a sound for everyone, each toggled in config.
+/// Mythic items carry a "✦ Mythic" lore line so players can tell.
 public class MythicManager {
 
     private static final long SCAN_TICKS = 20L;
+
+    /// lore line marking an item as mythic. Matched by its plain text, so restyling it later still finds old copies.
+    private static final String MARKER_TEXT = "✦ Mythic";
+    private static final Component MARKER = Component.text(MARKER_TEXT, NamedTextColor.GOLD)
+            .decoration(TextDecoration.ITALIC, false);
 
     public static final class Mythic {
         private final UUID id;
@@ -130,6 +140,7 @@ public class MythicManager {
     public Mythic makeMythic(ItemStack item, Player holder) {
         UUID id = UUID.randomUUID();
         item.editPersistentDataContainer(pdc -> pdc.set(idKey, PersistentDataType.STRING, id.toString()));
+        addMarker(item);
 
         Mythic mythic = new Mythic(id, item.effectiveName(), holder.getUniqueId());
         mythics.put(id, mythic);
@@ -145,7 +156,7 @@ public class MythicManager {
         plugin.saveConfig();
 
         if (item != null && mythic.id.equals(getId(item))) {
-            item.editPersistentDataContainer(pdc -> pdc.remove(idKey));
+            unmark(item);
         }
     }
 
@@ -159,6 +170,7 @@ public class MythicManager {
         Set<UUID> heldByHolder = new HashSet<>();
 
         for (Player player : Bukkit.getOnlinePlayers()) {
+            fixMarkers(player.getInventory());
             forEachMythic(player, (id, item) -> {
                 Mythic mythic = mythics.get(id);
                 if (mythic == null) return; // tagged item we no longer track
@@ -195,6 +207,46 @@ public class MythicManager {
                 player.playSound(player, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
             }
         }
+    }
+
+    /// gives tracked mythics the lore marker (older ones were made without it) and fully strips copies of removed
+    /// mythics. Only top-level slots - anything in a shulker or bundle gets fixed once it's taken out.
+    private void fixMarkers(PlayerInventory inventory) {
+        ItemStack[] contents = inventory.getContents();
+        for (int slot = 0; slot < contents.length; slot++) {
+            ItemStack item = contents[slot];
+            UUID id = getId(item);
+            if (id == null) continue;
+
+            boolean changed = mythics.containsKey(id) ? addMarker(item) : unmark(item);
+            if (changed) inventory.setItem(slot, item);
+        }
+    }
+
+    /// true if the item didn't have it yet
+    private boolean addMarker(ItemStack item) {
+        List<Component> lore = item.lore();
+        if (lore != null && lore.stream().anyMatch(MythicManager::isMarker)) return false;
+
+        List<Component> updated = lore == null ? new ArrayList<>() : new ArrayList<>(lore);
+        updated.add(MARKER);
+        item.lore(updated);
+        return true;
+    }
+
+    /// takes off the uuid tag and the lore marker. Always changes the item.
+    private boolean unmark(ItemStack item) {
+        item.editPersistentDataContainer(pdc -> pdc.remove(idKey));
+        List<Component> lore = item.lore();
+        if (lore != null) {
+            List<Component> updated = lore.stream().filter(line -> !isMarker(line)).toList();
+            item.lore(updated.isEmpty() ? null : updated);
+        }
+        return true;
+    }
+
+    private static boolean isMarker(Component line) {
+        return PlainTextComponentSerializer.plainText().serialize(line).equals(MARKER_TEXT);
     }
 
     /// every mythic in their inventory, armor, offhand and cursor, including inside shulker boxes and bundles
