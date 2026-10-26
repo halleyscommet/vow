@@ -11,13 +11,16 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.block.ShulkerBox;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.server.ServerCommandEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
@@ -29,21 +32,26 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import us.dingl.VowSMPPlugin.ConfigKey;
 import us.dingl.VowSMPPlugin.Items.LifeItem;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 import us.dingl.VowSMPPlugin.Vows.SoulboundItemVow;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /// taking the vow drops him to 0 lives and destroys every life item he has, and every death after costs 2 lives.
 /// The vow stays dormant until he finishes a resurrection ritual. Then he gets a soulbound smite item:
 /// right click strikes the nearest player he's aiming at within 15 blocks with lightning for exactly 3 hearts
-/// (through armor) plus 1 second of Blindness and Darkness, on a 3 minute cooldown.
+/// (through armor) plus 1 second of Blindness and Darkness, on a 3 minute cooldown. Players he trusts with
+/// /vow trust are never targeted.
 public class GuruVow extends SoulboundItemVow {
 
     private static final int LIVES_LOST = 2;
@@ -69,6 +77,9 @@ public class GuruVow extends SoulboundItemVow {
     private final DamageType smiteDamage;
     /// server tick his smite is ready again. Item cooldowns reset on relog, so track it here too.
     private final Map<UUID, Integer> readyAt = new HashMap<>();
+    /// guru -> players he trusts. A copy of the config so targeting never touches it - see loadTrusted().
+    /// Concurrent because tab completion reads it off the main thread.
+    private final Map<UUID, Set<UUID>> trusted = new ConcurrentHashMap<>();
 
     public GuruVow(VowSMPPlugin plugin) {
         super(plugin, "guru_smite");
@@ -82,6 +93,8 @@ public class GuruVow extends SoulboundItemVow {
             type = DamageType.MAGIC;
         }
         smiteDamage = type;
+
+        loadTrusted();
 
         // the lives bar only refreshes every 2 seconds, so count the cooldown down ourselves
         Bukkit.getScheduler().runTaskTimer(plugin, this::cooldownTick, COOLDOWN_DISPLAY_TICKS, COOLDOWN_DISPLAY_TICKS);
@@ -228,7 +241,7 @@ public class GuruVow extends SoulboundItemVow {
         Player closest = null;
         double closestDistance = Double.MAX_VALUE;
         for (Player other : guru.getWorld().getPlayers()) {
-            if (other.equals(guru) || other.isDead()
+            if (other.equals(guru) || other.isDead() || isTrusted(guru, other)
                     || other.getGameMode() == GameMode.SPECTATOR || other.getGameMode() == GameMode.CREATIVE) {
                 continue;
             }
@@ -258,6 +271,82 @@ public class GuruVow extends SoulboundItemVow {
 
         target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, EFFECT_TICKS, 0));
         target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, EFFECT_TICKS, 0));
+    }
+
+    // trust
+
+    /// read-only live view of who this guru trusts
+    public Set<UUID> getTrusted(UUID guru) {
+        Set<UUID> set = trusted.get(guru);
+        return set == null ? Set.of() : Collections.unmodifiableSet(set);
+    }
+
+    public boolean isTrusted(Player guru, Player other) {
+        Set<UUID> set = trusted.get(guru.getUniqueId());
+        return set != null && set.contains(other.getUniqueId());
+    }
+
+    /// updates the set and writes it to config. Returns false if nothing changed.
+    public boolean setTrusted(UUID guru, UUID other, boolean trust) {
+        Set<UUID> set = trusted.computeIfAbsent(guru, id -> ConcurrentHashMap.newKeySet());
+        boolean changed = trust ? set.add(other) : set.remove(other);
+        if (!changed) return false;
+
+        String path = ConfigKey.GURU_TRUSTED.getPath() + "." + guru;
+        if (set.isEmpty()) {
+            trusted.remove(guru);
+            plugin.getConfig().set(path, null);
+        } else {
+            plugin.getConfig().set(path, set.stream().map(UUID::toString).toList());
+        }
+        plugin.saveConfig();
+        return true;
+    }
+
+    /// rebuilds the sets from config. Runs on enable and before every /vow command.
+    private void loadTrusted() {
+        trusted.clear();
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection(ConfigKey.GURU_TRUSTED.getPath());
+        if (section == null) return;
+
+        for (String guruKey : section.getKeys(false)) {
+            UUID guru = parseUuid(guruKey);
+            if (guru == null) continue;
+
+            Set<UUID> set = ConcurrentHashMap.newKeySet();
+            for (String otherKey : section.getStringList(guruKey)) {
+                UUID other = parseUuid(otherKey);
+                if (other != null) set.add(other);
+            }
+            if (!set.isEmpty()) trusted.put(guru, set);
+        }
+    }
+
+    private UUID parseUuid(String s) {
+        try {
+            return UUID.fromString(s);
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Ignoring invalid UUID in " + ConfigKey.GURU_TRUSTED.getPath() + ": " + s);
+            return null;
+        }
+    }
+
+    // both fire before the command runs, so /vow trust itself sees the fresh sets
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
+        if (isVowCommand(event.getMessage().substring(1))) loadTrusted();
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onServerCommand(ServerCommandEvent event) {
+        if (isVowCommand(event.getCommand())) loadTrusted();
+    }
+
+    /// "vow ..." or "vowsmpplugin:vow ..."
+    private static boolean isVowCommand(String command) {
+        String label = command.stripLeading().split(" ", 2)[0];
+        label = label.substring(label.indexOf(':') + 1);
+        return label.equalsIgnoreCase("vow");
     }
 
     private boolean isAwakened(Player player) {

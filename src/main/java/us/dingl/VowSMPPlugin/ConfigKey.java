@@ -12,6 +12,7 @@ public enum ConfigKey {
     LIVES_SHOWN("lives-shown"),
     PLAYER_VOWS("player-vows"),
     INVITES("invites"),
+    GURU_TRUSTED("guru-trusted"),
     UPDATE_REPO("update-repo"),
     RESOURCE_PACK_URL("resource-pack.url"),
     RESOURCE_PACK_HASH("resource-pack.hash");
