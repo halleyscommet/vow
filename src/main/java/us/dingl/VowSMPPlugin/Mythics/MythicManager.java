@@ -78,7 +78,18 @@ public class MythicManager {
         return Collections.unmodifiableCollection(mythics.values());
     }
 
-    /// the mythic's uuid, or null if this isn't a mythic
+    /// null if there's no mythic with that uuid (or it was removed)
+    public Mythic getMythic(UUID id) {
+        return mythics.get(id);
+    }
+
+    /// the tracked mythic this item is, or null. Items still tagged from a removed mythic count as not mythic.
+    public Mythic getMythic(ItemStack item) {
+        UUID id = getId(item);
+        return id == null ? null : mythics.get(id);
+    }
+
+    /// the uuid tag on the item, or null. The mythic may have been removed since - see getMythic.
     public UUID getId(ItemStack item) {
         if (item == null || item.isEmpty()) return null;
         String id = item.getPersistentDataContainer().get(idKey, PersistentDataType.STRING);
@@ -100,6 +111,18 @@ public class MythicManager {
         mythics.put(id, mythic);
         save(mythic);
         return mythic;
+    }
+
+    /// stops tracking it and deletes it from config. Copies still out there keep their tag but are ignored,
+    /// so pass the item if you have it to strip the tag (edited in place, set it back afterwards).
+    public void removeMythic(Mythic mythic, ItemStack item) {
+        mythics.remove(mythic.id);
+        plugin.getConfig().set(ConfigKey.MYTHICS.getPath() + "." + mythic.id, null);
+        plugin.saveConfig();
+
+        if (item != null && mythic.id.equals(getId(item))) {
+            item.editPersistentDataContainer(pdc -> pdc.remove(idKey));
+        }
     }
 
     private void scan() {
