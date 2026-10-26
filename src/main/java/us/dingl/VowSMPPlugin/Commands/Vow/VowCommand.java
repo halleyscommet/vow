@@ -24,12 +24,14 @@ public class VowCommand {
         subCommands.add(new ResistanceSubCommand(plugin));
         subCommands.add(new TrustSubCommand(plugin));
         subCommands.add(new VowsSubCommand(plugin));
+        subCommands.add(new MythicsSubCommand(plugin));
         subCommands.add(new StatsSubCommand(plugin));
         subCommands.add(new GuiSubCommand(plugin));
         subCommands.add(new LeaderboardSubCommand(plugin));
         subCommands.add(new RitualSubCommand(plugin));
         subCommands.add(new UpdateSubCommand(plugin));
         subCommands.add(new DebugSubCommand(plugin));
+        subCommands.add(new AdminSubCommand(plugin));
         // future subcommands go here
     }
 

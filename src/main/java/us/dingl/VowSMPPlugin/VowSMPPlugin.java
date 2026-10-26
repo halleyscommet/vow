@@ -9,6 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.plugin.java.JavaPlugin;
 import us.dingl.VowSMPPlugin.Commands.LivesCommand;
+import us.dingl.VowSMPPlugin.Commands.Vow.MythicsSubCommand;
 import us.dingl.VowSMPPlugin.Commands.Vow.ResistanceSubCommand;
 import us.dingl.VowSMPPlugin.Commands.Vow.VowCommand;
 import us.dingl.VowSMPPlugin.Commands.WithdrawCommand;
@@ -18,6 +19,7 @@ import us.dingl.VowSMPPlugin.Guis.LivesActionBar;
 import us.dingl.VowSMPPlugin.Items.LifeItem;
 import us.dingl.VowSMPPlugin.Items.RitualItem;
 import us.dingl.VowSMPPlugin.Leaderboard.Leaderboard;
+import us.dingl.VowSMPPlugin.Mythics.MythicManager;
 import us.dingl.VowSMPPlugin.Listeners.ClaimLifeListener;
 import us.dingl.VowSMPPlugin.Listeners.DeathListener;
 import us.dingl.VowSMPPlugin.Listeners.LoginListener;
@@ -59,6 +61,7 @@ public final class VowSMPPlugin extends JavaPlugin {
     private Leaderboard leaderboard;
     private Storm storm;
     private VowManager vowManager;
+    private MythicManager mythicManager;
     private Updater updater;
 
     private HeadCache headCache;
@@ -85,6 +88,9 @@ public final class VowSMPPlugin extends JavaPlugin {
         vowManager = new VowManager(this);
         registerVows();
         vowManager.start();
+
+        mythicManager = new MythicManager(this);
+        mythicManager.start();
 
         updater = new Updater(this, getFile());
 
@@ -167,6 +173,10 @@ public final class VowSMPPlugin extends JavaPlugin {
 
     public Storm getStorm() {
         return storm;
+    }
+
+    public MythicManager getMythicManager() {
+        return mythicManager;
     }
 
     public VowManager getVowManager() {
@@ -407,6 +417,7 @@ public final class VowSMPPlugin extends JavaPlugin {
             registrar.register(new WithdrawCommand(this).build().build(), "Withdraw lives as items");
             registrar.register(new LivesCommand(this).build().build(), "Get lives or show an actionbar");
             registrar.register(new ResistanceSubCommand(this).build().build(), "Use the Karma vow's resistance");
+            registrar.register(new MythicsSubCommand(this).build().build(), "See who holds each mythic item");
         });
     }
 

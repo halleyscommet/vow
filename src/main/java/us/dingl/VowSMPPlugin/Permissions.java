@@ -16,6 +16,7 @@ public final class Permissions {
     public static final String AREA_MINE = "vow.3x3";
     public static final String RESISTANCE = "vow.res";
     public static final String TRUST = "vow.trust";
+    public static final String MYTHICS = "vow.mythics";
 
     // ops
     public static final String STATS = "vow.stats";
@@ -26,6 +27,7 @@ public final class Permissions {
     public static final String RITUAL = "vow.ritual";
     public static final String UPDATE = "vow.update";
     public static final String DEBUG = "vow.debug";
+    public static final String MYTHICS_MANAGE = "vow.mythics.manage";
 
     /// grants every op permission above
     public static final String ADMIN = "vow.admin";
@@ -38,6 +40,7 @@ public final class Permissions {
         add(pm, AREA_MINE, PermissionDefault.TRUE, "Toggle the Haley vow's 3x3 mining");
         add(pm, RESISTANCE, PermissionDefault.TRUE, "Use the Karma vow's resistance");
         add(pm, TRUST, PermissionDefault.TRUE, "Pick who the Guru vow's smite ignores");
+        add(pm, MYTHICS, PermissionDefault.TRUE, "See who holds each mythic item");
 
         Map<String, Boolean> adminChildren = new LinkedHashMap<>();
         add(pm, adminChildren, STATS, "See death and lives stats");
@@ -48,6 +51,7 @@ public final class Permissions {
         add(pm, adminChildren, RITUAL, "Start and stop the ritual storm");
         add(pm, adminChildren, UPDATE, "Download plugin updates");
         add(pm, adminChildren, DEBUG, "Testing tools");
+        add(pm, adminChildren, MYTHICS_MANAGE, "Make held items mythic");
 
         if (pm.getPermission(ADMIN) == null) {
             pm.addPermission(new Permission(ADMIN, "Every Vow SMP admin permission", PermissionDefault.OP, adminChildren));
