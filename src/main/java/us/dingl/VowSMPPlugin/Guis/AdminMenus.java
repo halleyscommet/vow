@@ -227,9 +227,9 @@ public final class AdminMenus {
                 .bind('#', filler())
                 .bind('B', backButton())
                 .bind('H', Button.of(ctx -> playerHead(target(ctx)), ctx -> { }))
-                .bind('-', Button.of(item(Material.RED_CONCRETE, "<red><b>-1 Life"),
+                .bind('-', Button.of(ui("ui_minus", item(Material.RED_CONCRETE, "<red><b>-1 Life")),
                         ctx -> changeLives(ctx, target(ctx), -1)))
-                .bind('+', Button.of(item(Material.LIME_CONCRETE, "<green><b>+1 Life"),
+                .bind('+', Button.of(ui("ui_plus", item(Material.LIME_CONCRETE, "<green><b>+1 Life")),
                         ctx -> changeLives(ctx, target(ctx), 1)))
                 .bind('V', Button.of(ctx -> {
                     Vow vow = plugin.getVowManager().getVow(target(ctx));
@@ -410,7 +410,7 @@ public final class AdminMenus {
                 .bind('<', filler())
                 .bind('>', filler())
                 .bind('<', Button.builder()
-                        .item(item(Material.ARROW, "<white>Previous Page"))
+                        .item(ui("ui_arrow_left", item(Material.ARROW, "<white>Previous Page")))
                         .viewRequirement(ctx -> ctx.session().hasPreviousPage(page))
                         .onClick(ctx -> {
                             UiSound.PAGE.play(ctx.player());
@@ -419,7 +419,7 @@ public final class AdminMenus {
                         .priority(1)
                         .build())
                 .bind('>', Button.builder()
-                        .item(item(Material.ARROW, "<white>Next Page"))
+                        .item(ui("ui_arrow_right", item(Material.ARROW, "<white>Next Page")))
                         .viewRequirement(ctx -> ctx.session().hasNextPage(page))
                         .onClick(ctx -> {
                             UiSound.PAGE.play(ctx.player());
@@ -431,17 +431,23 @@ public final class AdminMenus {
     }
 
     private Button backButton() {
-        return Button.of(item(Material.OAK_DOOR, "<white>Back"), ctx -> {
+        return Button.of(ui("ui_back", item(Material.OAK_DOOR, "<white>Back")), ctx -> {
             UiSound.CLICK.play(ctx.player());
             ctx.back();
         });
     }
 
     private static Button filler() {
-        ItemStack filler = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE);
-        filler.editMeta(meta -> meta.setItemModel(NamespacedKey.fromString("vow:blank_slot")));
+        ItemStack filler = ui("blank_slot", new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
         filler.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().hideTooltip(true).build());
         return Button.of(filler);
+    }
+
+    /// swaps the item's look for one of the pack's slot-sized UI textures (resourcepack/assets/vow/items).
+    /// The real item stays underneath, so it still makes sense if the pack didn't load.
+    private static ItemStack ui(String model, ItemStack item) {
+        item.editMeta(meta -> meta.setItemModel(new NamespacedKey("vow", model)));
+        return item;
     }
 
     private ItemStack playerHead(UUID id, String... extraLore) {

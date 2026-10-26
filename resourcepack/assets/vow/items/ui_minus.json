@@ -1,0 +1,7 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "vow:item/ui_minus"
+  },
+  "oversized_in_gui": true
+}
