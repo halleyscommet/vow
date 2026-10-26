@@ -10,7 +10,5 @@ logged-players: []
 killed-players: []
 player-lives: {}
 player-vows: {}
-# invited player uuid -> uuid of the Collera who invited them (from before Collera lost /vow invite)
-invites: {}
 # guru uuid -> uuids of players his smite never targets (/vow trust)
 guru-trusted: {}

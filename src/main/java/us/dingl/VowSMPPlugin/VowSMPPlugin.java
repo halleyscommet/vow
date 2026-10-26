@@ -372,21 +372,6 @@ public final class VowSMPPlugin extends JavaPlugin {
         return updated;
     }
 
-    // collera invites. Collera can't invite anymore, but players invited before that still
-    // have 0 lives and lose their spot when they die.
-
-    /// true if this player only got on the server through a Collera invite
-    public boolean isInvited(UUID id) {
-        return getConfig().isSet(ConfigKey.INVITES.getPath() + "." + id);
-    }
-
-    /// unwhitelists them and forgets the invite
-    public void removeInvite(UUID invitee) {
-        getConfig().set(ConfigKey.INVITES.getPath() + "." + invitee, null);
-        saveConfig();
-        Bukkit.getOfflinePlayer(invitee).setWhitelisted(false);
-    }
-
     private List<UUID> readUuidList(ConfigKey key) {
         List<UUID> result = new ArrayList<>();
         for (String s : getConfig().getStringList(key.getPath())) {
