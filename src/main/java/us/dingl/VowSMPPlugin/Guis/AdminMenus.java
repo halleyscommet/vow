@@ -80,6 +80,7 @@ public final class AdminMenus {
     private final Menu main;
     private final Menu players;
     private final Menu player;
+    private final Menu lives;
     private final Menu vowPicker;
     private final Menu vows;
     private final Menu mythics;
@@ -87,6 +88,7 @@ public final class AdminMenus {
     public AdminMenus(VowSMPPlugin plugin) {
         this.plugin = plugin;
         this.vowPicker = buildVowPicker();
+        this.lives = buildLives();
         this.player = buildPlayer();
         this.players = buildPlayers();
         this.vows = buildVows();
@@ -206,12 +208,11 @@ public final class AdminMenus {
 
     private Button playerButton(UUID id) {
         return Button.builder()
-                .item(ctx -> playerHead(id, "<gray>Left click: <green>+1 life", "<gray>Right click: <red>-1 life",
-                        "<gray>Shift click: <white>more"))
-                .on(ClickKind.LEFT, ctx -> changeLives(ctx, id, 1))
-                .on(ClickKind.RIGHT, ctx -> changeLives(ctx, id, -1))
-                .on(ClickKind.SHIFT_LEFT, ctx -> openPlayer(ctx, id))
-                .on(ClickKind.SHIFT_RIGHT, ctx -> openPlayer(ctx, id))
+                .item(ctx -> playerHead(id, "<gray>Click: <white>details", "<gray>Shift click: <white>lives"))
+                .on(ClickKind.LEFT, ctx -> openFor(ctx, player, id))
+                .on(ClickKind.RIGHT, ctx -> openFor(ctx, player, id))
+                .on(ClickKind.SHIFT_LEFT, ctx -> openFor(ctx, lives, id))
+                .on(ClickKind.SHIFT_RIGHT, ctx -> openFor(ctx, lives, id))
                 .build();
     }
 
@@ -222,24 +223,19 @@ public final class AdminMenus {
                 .updateInterval(REFRESH_TICKS)
                 .pattern(
                         "#########",
-                        "#H#-+#VI#",
+                        "#H#L#V#I#",
                         "B########")
                 .bind('#', filler())
                 .bind('B', backButton())
                 .bind('H', Button.of(ctx -> playerHead(target(ctx)), ctx -> { }))
-                .bind('-', Button.of(ui("ui_minus", item(Material.RED_CONCRETE, "<red><b>-1 Life")),
-                        ctx -> changeLives(ctx, target(ctx), -1)))
-                .bind('+', Button.of(ui("ui_plus", item(Material.LIME_CONCRETE, "<green><b>+1 Life")),
-                        ctx -> changeLives(ctx, target(ctx), 1)))
+                .bind('L', Button.of(ctx -> livesItem(target(ctx), "<gray>Click to change"),
+                        ctx -> openFor(ctx, lives, target(ctx))))
                 .bind('V', Button.of(ctx -> {
                     Vow vow = plugin.getVowManager().getVow(target(ctx));
                     return vow == null
                             ? item(Material.BOOK, "<gray>No vow", "<gray>Click to give a vow")
                             : item(vow.icon(), "<gold><b>" + vow.name(), "<gray>Click to change");
-                }, ctx -> {
-                    UiSound.CLICK.play(ctx.player());
-                    PaperGUIApi.get().open(ctx.player(), vowPicker, Map.of(TARGET, target(ctx)));
-                }))
+                }, ctx -> openFor(ctx, vowPicker, target(ctx))))
                 .bind('I', Button.builder()
                         .item(ctx -> isImmortal(target(ctx))
                                 ? item(Material.TOTEM_OF_UNDYING, "<green><b>Immortal",
@@ -259,6 +255,38 @@ public final class AdminMenus {
                         })
                         .build())
                 .build();
+    }
+
+    private Menu buildLives() {
+        return Menu.builder("vow_admin_lives")
+                .rows(3)
+                .title(ctx -> Component.text(plugin.getPlayerName(target(ctx)) + "'s Lives"))
+                .updateInterval(REFRESH_TICKS)
+                .pattern(
+                        "#########",
+                        "##-#L#+##",
+                        "B########")
+                .bind('#', filler())
+                .bind('B', backButton())
+                .bind('L', Button.builder()
+                        .item(ctx -> livesItem(target(ctx), "<gray>Left click: <green>+1", "<gray>Right click: <red>-1"))
+                        .on(ClickKind.LEFT, ctx -> changeLives(ctx, target(ctx), 1))
+                        .on(ClickKind.RIGHT, ctx -> changeLives(ctx, target(ctx), -1))
+                        .build())
+                .bind('-', Button.of(ui("ui_minus", item(Material.RED_CONCRETE, "<red><b>-1 Life")),
+                        ctx -> changeLives(ctx, target(ctx), -1)))
+                .bind('+', Button.of(ui("ui_plus", item(Material.LIME_CONCRETE, "<green><b>+1 Life")),
+                        ctx -> changeLives(ctx, target(ctx), 1)))
+                .build();
+    }
+
+    /// a heart showing their lives, stacked to match so the count shows on the slot
+    private ItemStack livesItem(UUID id, String... extraLore) {
+        int count = plugin.getPlayerLives(id);
+        ItemStack item = ui("ui_heart", item(Material.RED_DYE,
+                "<red><b>Lives: " + count + "/" + VowSMPPlugin.MAX_LIVES, extraLore));
+        item.setAmount(Math.max(1, count));
+        return item;
     }
 
     private Menu buildVowPicker() {
@@ -477,9 +505,10 @@ public final class AdminMenus {
         ctx.open(menu);
     }
 
-    private void openPlayer(ClickContext ctx, UUID id) {
+    /// opens one of the per-player menus about {@code id}
+    private void openFor(ClickContext ctx, Menu menu, UUID id) {
         UiSound.CLICK.play(ctx.player());
-        PaperGUIApi.get().open(ctx.player(), player, Map.of(TARGET, id));
+        PaperGUIApi.get().open(ctx.player(), menu, Map.of(TARGET, id));
     }
 
     private boolean isImmortal(UUID id) {
