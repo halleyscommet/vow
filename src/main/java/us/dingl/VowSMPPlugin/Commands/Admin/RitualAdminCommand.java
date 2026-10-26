@@ -1,30 +1,30 @@
-package us.dingl.VowSMPPlugin.Commands.Vow;
+package us.dingl.VowSMPPlugin.Commands.Admin;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.entity.Player;
-import us.dingl.VowSMPPlugin.Permissions;
+import us.dingl.VowSMPPlugin.Commands.Vow.CommandUtil;
+import us.dingl.VowSMPPlugin.Commands.Vow.SubCommand;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 
-public class RitualSubCommand implements SubCommand {
+public class RitualAdminCommand implements SubCommand {
 
     private final VowSMPPlugin plugin;
 
-    public RitualSubCommand(VowSMPPlugin plugin) {
+    public RitualAdminCommand(VowSMPPlugin plugin) {
         this.plugin = plugin;
     }
 
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("ritual")
-                .requires(CommandUtil.permission(Permissions.RITUAL))
                 .then(Commands.literal("start")
                         .executes(ctx -> {
                             Player player = CommandUtil.requirePlayer(ctx);
                             if (!plugin.getStorm().start(player, false)) {
-                                player.sendMessage("A storm is already active. Use /vow ritual stop first.");
+                                player.sendMessage("A storm is already active. Use /vow admin ritual stop first.");
                                 return 0;
                             }
                             return Command.SINGLE_SUCCESS;

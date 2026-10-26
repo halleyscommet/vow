@@ -14,7 +14,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class FakeLightning {
 
-    /// strikes at the player's own position (used by /vow ritual lightning)
+    /// strikes at the player's own position (used by /vow admin debug lightning)
     public void summon(VowSMPPlugin plugin, Player player) {
         Location loc = player.getLocation();
         summon(player, loc.getX(), loc.getY(), loc.getZ());

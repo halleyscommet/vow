@@ -13,7 +13,7 @@ import us.dingl.VowSMPPlugin.Commands.Vow.MythicsSubCommand;
 import us.dingl.VowSMPPlugin.Commands.Vow.ResistanceSubCommand;
 import us.dingl.VowSMPPlugin.Commands.Vow.VowCommand;
 import us.dingl.VowSMPPlugin.Commands.WithdrawCommand;
-import us.dingl.VowSMPPlugin.Gui.GuiManager;
+import us.dingl.VowSMPPlugin.Guis.AdminMenus;
 import us.dingl.VowSMPPlugin.Guis.HeadCache;
 import us.dingl.VowSMPPlugin.Guis.LivesActionBar;
 import us.dingl.VowSMPPlugin.Items.LifeItem;
@@ -65,6 +65,7 @@ public final class VowSMPPlugin extends JavaPlugin {
     private Updater updater;
 
     private HeadCache headCache;
+    private AdminMenus adminMenus;
 
     private final Set<UUID> livesShown = ConcurrentHashMap.newKeySet();
     private LivesActionBar livesActionBar;
@@ -96,9 +97,9 @@ public final class VowSMPPlugin extends JavaPlugin {
 
         registerCommands();
         registerListeners();
-        GuiManager.init(this);
 
         headCache = new HeadCache(this);
+        adminMenus = new AdminMenus(this);
         headCache.start();
 
         // worlds might not exist yet during onEnable, so spawn the leaderboard next tick
@@ -165,6 +166,10 @@ public final class VowSMPPlugin extends JavaPlugin {
         } catch (IOException e) {
             getLogger().log(Level.SEVERE, "Could not save " + target, e);
         }
+    }
+
+    public AdminMenus getAdminMenus() {
+        return adminMenus;
     }
 
     public HeadCache getHeadCache() {

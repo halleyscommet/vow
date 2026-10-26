@@ -1,4 +1,4 @@
-package us.dingl.VowSMPPlugin.Commands.Vow;
+package us.dingl.VowSMPPlugin.Commands.Admin;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -16,25 +16,25 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import us.dingl.VowSMPPlugin.Permissions;
+import us.dingl.VowSMPPlugin.Commands.Vow.CommandUtil;
+import us.dingl.VowSMPPlugin.Commands.Vow.SubCommand;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class LeaderboardSubCommand implements SubCommand {
+public class LeaderboardAdminCommand implements SubCommand {
 
     private final VowSMPPlugin plugin;
 
-    public LeaderboardSubCommand(VowSMPPlugin plugin) {
+    public LeaderboardAdminCommand(VowSMPPlugin plugin) {
         this.plugin = plugin;
     }
 
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("leaderboard")
-                .requires(CommandUtil.permission(Permissions.LEADERBOARD))
                 .executes(this::status)
                 .then(Commands.literal("setpos")
                         .then(coordArg("x", 0)

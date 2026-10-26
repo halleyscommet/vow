@@ -1,4 +1,4 @@
-package us.dingl.VowSMPPlugin.Commands.Vow;
+package us.dingl.VowSMPPlugin.Commands.Admin;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -12,7 +12,8 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import us.dingl.VowSMPPlugin.Permissions;
+import us.dingl.VowSMPPlugin.Commands.Vow.CommandUtil;
+import us.dingl.VowSMPPlugin.Commands.Vow.SubCommand;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 import us.dingl.VowSMPPlugin.Vows.Vow;
 import us.dingl.VowSMPPlugin.Vows.VowManager;
@@ -20,22 +21,20 @@ import us.dingl.VowSMPPlugin.Vows.VowManager;
 import java.util.List;
 import java.util.UUID;
 
-public class VowsSubCommand implements SubCommand {
+public class VowsAdminCommand implements SubCommand {
 
     private final VowSMPPlugin plugin;
 
-    public VowsSubCommand(VowSMPPlugin plugin) {
+    public VowsAdminCommand(VowSMPPlugin plugin) {
         this.plugin = plugin;
     }
 
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("vows")
-                .requires(CommandUtil.permission(Permissions.VOWS_LIST))
                 .executes(this::list)
                 .then(Commands.literal("list").executes(this::list))
                 .then(Commands.literal("set")
-                        .requires(CommandUtil.permission(Permissions.VOWS_MANAGE))
                         .then(Commands.argument("player", ArgumentTypes.player())
                                 .then(Commands.argument("vow", StringArgumentType.word())
                                         .suggests((ctx, builder) -> {
@@ -44,7 +43,6 @@ public class VowsSubCommand implements SubCommand {
                                         })
                                         .executes(this::set))))
                 .then(Commands.literal("clear")
-                        .requires(CommandUtil.permission(Permissions.VOWS_MANAGE))
                         .then(Commands.argument("player", ArgumentTypes.player())
                                 .executes(this::clear)));
     }

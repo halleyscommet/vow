@@ -1,4 +1,4 @@
-package us.dingl.VowSMPPlugin.Commands.Vow;
+package us.dingl.VowSMPPlugin.Commands.Admin;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -13,29 +13,29 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import us.dingl.VowSMPPlugin.Commands.Vow.CommandUtil;
+import us.dingl.VowSMPPlugin.Commands.Vow.SubCommand;
 import us.dingl.VowSMPPlugin.Mythics.MythicManager;
 import us.dingl.VowSMPPlugin.Mythics.MythicManager.Mythic;
-import us.dingl.VowSMPPlugin.Permissions;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 
 import java.util.UUID;
 
-/// /vow admin makemythic - turns the held item into a tracked mythic
-/// /vow admin removemythic [id] - stops tracking the held mythic, or the one with that uuid
-public class AdminSubCommand implements SubCommand {
+/// /vow admin mythic make - turns the held item into a tracked mythic
+/// /vow admin mythic remove [id] - stops tracking the held mythic, or the one with that uuid
+public class MythicAdminCommand implements SubCommand {
 
     private final VowSMPPlugin plugin;
 
-    public AdminSubCommand(VowSMPPlugin plugin) {
+    public MythicAdminCommand(VowSMPPlugin plugin) {
         this.plugin = plugin;
     }
 
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
-        return Commands.literal("admin")
-                .requires(CommandUtil.permission(Permissions.MYTHICS_MANAGE))
-                .then(Commands.literal("makemythic").executes(this::makeMythic))
-                .then(Commands.literal("removemythic")
+        return Commands.literal("mythic")
+                .then(Commands.literal("make").executes(this::makeMythic))
+                .then(Commands.literal("remove")
                         .executes(this::removeHeldMythic)
                         .then(Commands.argument("id", StringArgumentType.word())
                                 .suggests((ctx, builder) -> {
@@ -83,7 +83,7 @@ public class AdminSubCommand implements SubCommand {
 
         Mythic mythic = plugin.getMythicManager().getMythic(item);
         if (mythic == null) {
-            player.sendMessage(Component.text("You're not holding a mythic. Use /vow admin removemythic <id> instead.",
+            player.sendMessage(Component.text("You're not holding a mythic. Use /vow admin mythic remove <id> instead.",
                     NamedTextColor.RED));
             return 0;
         }

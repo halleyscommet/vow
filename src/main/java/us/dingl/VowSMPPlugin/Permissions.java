@@ -4,9 +4,6 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginManager;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 /// every permission the plugin checks. Use these constants instead of typing the strings.
 public final class Permissions {
 
@@ -18,18 +15,7 @@ public final class Permissions {
     public static final String TRUST = "vow.trust";
     public static final String MYTHICS = "vow.mythics";
 
-    // ops
-    public static final String STATS = "vow.stats";
-    public static final String MENU = "vow.menu";
-    public static final String VOWS_LIST = "vow.vows.list";
-    public static final String LEADERBOARD = "vow.leaderboard";
-    public static final String VOWS_MANAGE = "vow.vows.manage";
-    public static final String RITUAL = "vow.ritual";
-    public static final String UPDATE = "vow.update";
-    public static final String DEBUG = "vow.debug";
-    public static final String MYTHICS_MANAGE = "vow.mythics.manage";
-
-    /// grants every op permission above
+    /// ops: /vow admin and everything under it
     public static final String ADMIN = "vow.admin";
 
     private Permissions() {}
@@ -42,25 +28,7 @@ public final class Permissions {
         add(pm, TRUST, PermissionDefault.TRUE, "Pick who the Guru vow's smite ignores");
         add(pm, MYTHICS, PermissionDefault.TRUE, "See who holds each mythic item");
 
-        Map<String, Boolean> adminChildren = new LinkedHashMap<>();
-        add(pm, adminChildren, STATS, "See death and lives stats");
-        add(pm, adminChildren, MENU, "Open the config menu");
-        add(pm, adminChildren, LEADERBOARD, "Toggle and move the leaderboard");
-        add(pm, adminChildren, VOWS_LIST, "List every vow and who has it");
-        add(pm, adminChildren, VOWS_MANAGE, "Give and remove player vows");
-        add(pm, adminChildren, RITUAL, "Start and stop the ritual storm");
-        add(pm, adminChildren, UPDATE, "Download plugin updates");
-        add(pm, adminChildren, DEBUG, "Testing tools");
-        add(pm, adminChildren, MYTHICS_MANAGE, "Make held items mythic");
-
-        if (pm.getPermission(ADMIN) == null) {
-            pm.addPermission(new Permission(ADMIN, "Every Vow SMP admin permission", PermissionDefault.OP, adminChildren));
-        }
-    }
-
-    private static void add(PluginManager pm, Map<String, Boolean> parent, String name, String description) {
-        add(pm, name, PermissionDefault.OP, description);
-        parent.put(name, true);
+        add(pm, ADMIN, PermissionDefault.OP, "Use the admin panel and /vow admin commands");
     }
 
     private static void add(PluginManager pm, String name, PermissionDefault def, String description) {

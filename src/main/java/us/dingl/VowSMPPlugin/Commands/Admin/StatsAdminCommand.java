@@ -1,4 +1,4 @@
-package us.dingl.VowSMPPlugin.Commands.Vow;
+package us.dingl.VowSMPPlugin.Commands.Admin;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -7,7 +7,7 @@ import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
-import us.dingl.VowSMPPlugin.Permissions;
+import us.dingl.VowSMPPlugin.Commands.Vow.SubCommand;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 
 import java.util.Collection;
@@ -16,18 +16,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public class StatsSubCommand implements SubCommand {
+public class StatsAdminCommand implements SubCommand {
 
     private final VowSMPPlugin plugin;
 
-    public StatsSubCommand(VowSMPPlugin plugin) {
+    public StatsAdminCommand(VowSMPPlugin plugin) {
         this.plugin = plugin;
     }
 
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("stats")
-                .requires(CommandUtil.permission(Permissions.STATS))
                 .then(Commands.literal("nodeaths").executes(ctx -> {
                     sendNames(ctx.getSource().getSender(), "The following players haven't died yet:", plugin.getPlayersNotYetKilled());
                     return Command.SINGLE_SUCCESS;

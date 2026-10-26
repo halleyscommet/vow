@@ -46,6 +46,12 @@
             <id>codemc-releases</id>
             <url>https://repo.codemc.io/repository/maven-releases/</url>
         </repository>
+        <!-- PaperGUI isn't published anywhere, so its jar is checked in here. Copy a new build into
+             libs/us/dingl/PaperGUI/<version>/ when it changes. -->
+        <repository>
+            <id>project-libs</id>
+            <url>file://${project.basedir}/libs</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -59,6 +65,12 @@
             <groupId>com.github.retrooper</groupId>
             <artifactId>packetevents-spigot</artifactId>
             <version>2.13.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>us.dingl</groupId>
+            <artifactId>PaperGUI</artifactId>
+            <version>0.1</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

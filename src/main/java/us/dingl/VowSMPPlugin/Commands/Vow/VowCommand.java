@@ -6,6 +6,7 @@ import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import us.dingl.VowSMPPlugin.Commands.Admin.AdminCommand;
 import us.dingl.VowSMPPlugin.Commands.LivesCommand;
 import us.dingl.VowSMPPlugin.Commands.WithdrawCommand;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
@@ -23,15 +24,9 @@ public class VowCommand {
         subCommands.add(new AreaMineSubCommand(plugin));
         subCommands.add(new ResistanceSubCommand(plugin));
         subCommands.add(new TrustSubCommand(plugin));
-        subCommands.add(new VowsSubCommand(plugin));
         subCommands.add(new MythicsSubCommand(plugin));
-        subCommands.add(new StatsSubCommand(plugin));
-        subCommands.add(new GuiSubCommand(plugin));
-        subCommands.add(new LeaderboardSubCommand(plugin));
-        subCommands.add(new RitualSubCommand(plugin));
-        subCommands.add(new UpdateSubCommand(plugin));
-        subCommands.add(new DebugSubCommand(plugin));
-        subCommands.add(new AdminSubCommand(plugin));
+        // everything admin-only lives under here
+        subCommands.add(new AdminCommand(plugin));
         // future subcommands go here
     }
 
