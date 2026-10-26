@@ -12,7 +12,3 @@ dependencies:
       load: BEFORE
       required: true
       join-classpath: true
-    PaperGUI:
-      load: BEFORE
-      required: true
-      join-classpath: true

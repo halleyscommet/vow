@@ -7,6 +7,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import us.dingl.VowSMPPlugin.Commands.LivesCommand;
 import us.dingl.VowSMPPlugin.Commands.Vow.MythicsSubCommand;
@@ -41,6 +42,10 @@ import us.dingl.VowSMPPlugin.Vows.Impl.IceVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.KarmaVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.WhimplyVow;
 import us.dingl.VowSMPPlugin.Vows.VowManager;
+import us.dingl.paperGUI.api.PaperGUIApi;
+import us.dingl.paperGUI.builtin.Builtins;
+import us.dingl.paperGUI.internal.GuiManager;
+import us.dingl.paperGUI.internal.PaperGUIApiImpl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -66,6 +71,7 @@ public final class VowSMPPlugin extends JavaPlugin {
     private Updater updater;
     private ResourcePackListener resourcePackListener;
 
+    private GuiManager guiManager;
     private HeadCache headCache;
     private AdminMenus adminMenus;
 
@@ -100,6 +106,7 @@ public final class VowSMPPlugin extends JavaPlugin {
         registerCommands();
         registerListeners();
 
+        startGuis();
         headCache = new HeadCache(this);
         adminMenus = new AdminMenus(this);
         headCache.start();
@@ -144,7 +151,23 @@ public final class VowSMPPlugin extends JavaPlugin {
         if (livesActionBar != null) {
             livesActionBar.stop();
         }
+        if (guiManager != null) {
+            guiManager.shutdown();
+        }
         getLogger().info("Vow SMP Plugin has been disabled!");
+    }
+
+    /// PaperGUI is shaded in rather than installed as its own plugin, so boot its menu runtime here -
+    /// the same setup its plugin does, minus the /papergui command, web editor and file menus.
+    /// The api is registered as a service so PaperGUIApi.get() still finds it.
+    private void startGuis() {
+        guiManager = new GuiManager(this);
+        guiManager.clickCooldown(2);
+        PaperGUIApiImpl api = new PaperGUIApiImpl(this, guiManager);
+        getServer().getServicesManager().register(PaperGUIApi.class, api, this, ServicePriority.Normal);
+        Builtins.register(this, api);
+        getServer().getPluginManager().registerEvents(guiManager, this);
+        guiManager.start();
     }
 
     /// config.yml holds every player's lives and vows, so never write it in place - a crash mid-write

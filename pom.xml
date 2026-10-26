@@ -54,6 +54,42 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- shades PaperGUI's menu runtime in under our own package, so servers don't need the
+                 PaperGUI plugin installed. Its plugin shell (main class, /papergui, web editor, example
+                 menus) is left out - VowSMPPlugin boots the runtime itself in onEnable -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <relocations>
+                                <relocation>
+                                    <pattern>us.dingl.paperGUI</pattern>
+                                    <shadedPattern>us.dingl.VowSMPPlugin.libs.paperGUI</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <filters>
+                                <filter>
+                                    <artifact>us.dingl:PaperGUI</artifact>
+                                    <includes>
+                                        <include>us/dingl/paperGUI/api/**</include>
+                                        <include>us/dingl/paperGUI/internal/**</include>
+                                        <include>us/dingl/paperGUI/config/**</include>
+                                        <include>us/dingl/paperGUI/builtin/**</include>
+                                    </includes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         <resources>
             <resource>
@@ -72,8 +108,8 @@
             <id>codemc-releases</id>
             <url>https://repo.codemc.io/repository/maven-releases/</url>
         </repository>
-        <!-- PaperGUI isn't published anywhere, so its jar is checked in here. Copy a new build into
-             libs/us/dingl/PaperGUI/<version>/ when it changes. -->
+        <!-- PaperGUI isn't published anywhere, so its jar is checked in here (and shaded into ours).
+             Copy a new build into libs/us/dingl/PaperGUI/<version>/ when it changes. -->
         <repository>
             <id>project-libs</id>
             <url>file://${project.basedir}/libs</url>
@@ -97,7 +133,6 @@
             <groupId>us.dingl</groupId>
             <artifactId>PaperGUI</artifactId>
             <version>0.1</version>
-            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>
