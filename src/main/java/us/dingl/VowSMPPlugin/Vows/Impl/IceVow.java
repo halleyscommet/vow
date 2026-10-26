@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -20,10 +21,12 @@ import us.dingl.VowSMPPlugin.Vows.SoulboundItemVow;
 
 import java.util.List;
 
-/// gives a full set of max enchanted netherite armor (no swift sneak or soul speed) that he keeps when he dies
+/// gives a full set of Protection III netherite armor, otherwise max enchanted (no swift sneak or soul speed), that he keeps when he dies
 /// and can't drop or store. The armor can still break, and a broken piece is gone for good - it's never replaced,
 /// but he can wear his own armor in its place. He also can't use invisibility or drink potions of infestation.
 public class IceVow extends SoulboundItemVow {
+
+    private static final int PROTECTION_LEVEL = 3;
 
     public IceVow(VowSMPPlugin plugin) {
         super(plugin, "ice_armor");
@@ -41,7 +44,8 @@ public class IceVow extends SoulboundItemVow {
 
     @Override
     public String description() {
-        return "Gives max enchanted netherite armor that you keep when you die and can't drop or store. "
+        return "Gives netherite armor with Protection III (and otherwise max enchants) that you keep when you die "
+                + "and can't drop or store. "
                 + "When a piece breaks it's gone forever. You can't use invisibility or drink potions of infestation.";
     }
 
@@ -82,6 +86,20 @@ public class IceVow extends SoulboundItemVow {
         player.removePotionEffect(PotionEffectType.INVISIBILITY);
     }
 
+    /// armor handed out before the switch to Protection III still has IV - bring it down when they join
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        PlayerInventory inventory = event.getPlayer().getInventory();
+        ItemStack[] contents = inventory.getContents();
+        for (int slot = 0; slot < contents.length; slot++) {
+            ItemStack item = contents[slot];
+            if (isSoulbound(item) && item.getEnchantmentLevel(Enchantment.PROTECTION) > PROTECTION_LEVEL) {
+                item.addEnchantment(Enchantment.PROTECTION, PROTECTION_LEVEL);
+                inventory.setItem(slot, item);
+            }
+        }
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onDrink(PlayerItemConsumeEvent event) {
         if (!has(event.getPlayer())) return;
@@ -114,7 +132,7 @@ public class IceVow extends SoulboundItemVow {
     /// what every piece gets. Thorns is left off since it wears the armor down faster, and broken pieces are gone for good
     private ItemStack armor(Material type) {
         ItemStack item = new ItemStack(type);
-        item.addEnchantment(Enchantment.PROTECTION, 4);
+        item.addEnchantment(Enchantment.PROTECTION, PROTECTION_LEVEL);
         item.addEnchantment(Enchantment.UNBREAKING, 3);
         item.addEnchantment(Enchantment.MENDING, 1);
         return item;
