@@ -30,6 +30,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 /// the /vow admin panel, built on PaperGUI. Menus are built once and reused - everything shown is read
 /// when the item renders, and list menus redraw every second so changes made elsewhere show up.
@@ -270,6 +272,10 @@ public final class AdminMenus {
                         .toList())
                 .build())
                 .toBuilder()
+                .button(46, transferToggle("Chat Broadcast", Material.OAK_SIGN,
+                        manager::isBroadcastEnabled, manager::setBroadcastEnabled))
+                .button(47, transferToggle("Sound", Material.NOTE_BLOCK,
+                        manager::isSoundEnabled, manager::setSoundEnabled))
                 .button(51, Button.builder()
                         .item(item(Material.ANVIL, "<yellow><b>Make Held Item Mythic",
                                 "<gray>Hold a single item in your main hand"))
@@ -287,6 +293,20 @@ public final class AdminMenus {
                             ctx.refresh();
                         })
                         .build())
+                .build();
+    }
+
+    /// a switch for something that happens when a mythic changes hands
+    private Button transferToggle(String label, Material icon, BooleanSupplier get, Consumer<Boolean> set) {
+        return Button.builder()
+                .item(ctx -> get.getAsBoolean()
+                        ? item(icon, "<green><b>" + label + ": On", "<gray>When a mythic changes hands", "<gray>Click to turn off")
+                        : item(icon, "<red><b>" + label + ": Off", "<gray>When a mythic changes hands", "<gray>Click to turn on"))
+                .priority(1) // above the filler in that slot
+                .onClick(ctx -> {
+                    set.accept(!get.getAsBoolean());
+                    ctx.refresh();
+                })
                 .build();
     }
 

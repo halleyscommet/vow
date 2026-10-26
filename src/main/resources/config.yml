@@ -14,3 +14,7 @@ player-vows: {}
 guru-trusted: {}
 # mythic item uuid -> name (MiniMessage) and holder uuid. Managed with /vow admin makemythic
 mythics: {}
+# what happens when a mythic changes hands
+mythic-transfer:
+  broadcast: true
+  sound: true

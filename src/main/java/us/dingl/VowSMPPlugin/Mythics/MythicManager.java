@@ -30,6 +30,7 @@ import java.util.function.BiConsumer;
 /// mythic items: one-of-a-kind items tagged with their own uuid. Every mythic and its holder is kept in
 /// memory and mirrored to config. Holders are found by scanning online inventories once a second, so the
 /// holder is whoever had it last - putting it in a chest doesn't change that, someone else taking it does.
+/// Changing hands can announce it in chat and play a sound for everyone, each toggled in config.
 public class MythicManager {
 
     private static final long SCAN_TICKS = 20L;
@@ -63,6 +64,9 @@ public class MythicManager {
     private final NamespacedKey idKey;
     /// insertion order = the order they were made, which is how /mythics lists them
     private final Map<UUID, Mythic> mythics = new LinkedHashMap<>();
+    /// what happens when a mythic changes hands. Copies of the config, read on every transfer.
+    private boolean broadcast;
+    private boolean sound;
 
     public MythicManager(VowSMPPlugin plugin) {
         this.plugin = plugin;
@@ -72,6 +76,26 @@ public class MythicManager {
 
     public void start() {
         Bukkit.getScheduler().runTaskTimer(plugin, this::scan, SCAN_TICKS, SCAN_TICKS);
+    }
+
+    public boolean isBroadcastEnabled() {
+        return broadcast;
+    }
+
+    public void setBroadcastEnabled(boolean enabled) {
+        broadcast = enabled;
+        plugin.getConfig().set(ConfigKey.MYTHIC_BROADCAST.getPath(), enabled);
+        plugin.saveConfig();
+    }
+
+    public boolean isSoundEnabled() {
+        return sound;
+    }
+
+    public void setSoundEnabled(boolean enabled) {
+        sound = enabled;
+        plugin.getConfig().set(ConfigKey.MYTHIC_SOUND.getPath(), enabled);
+        plugin.saveConfig();
     }
 
     public Collection<Mythic> getMythics() {
@@ -159,14 +183,17 @@ public class MythicManager {
         mythic.name = item.effectiveName(); // keep up with anvil renames
         save(mythic);
 
-        Component message = Component.text(newHolder.getName(), NamedTextColor.GOLD, TextDecoration.BOLD)
-                .append(Component.text(" now holds ", NamedTextColor.YELLOW).decoration(TextDecoration.BOLD, false))
-                .append(mythic.name.decoration(TextDecoration.BOLD, false))
-                .append(Component.text(oldHolder != null ? " (from " + plugin.getPlayerName(oldHolder) + ")" : "",
-                        NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false));
-        Bukkit.broadcast(message);
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            player.playSound(player, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
+        if (broadcast) {
+            Bukkit.broadcast(Component.text(newHolder.getName(), NamedTextColor.GOLD, TextDecoration.BOLD)
+                    .append(Component.text(" now holds ", NamedTextColor.YELLOW).decoration(TextDecoration.BOLD, false))
+                    .append(mythic.name.decoration(TextDecoration.BOLD, false))
+                    .append(Component.text(oldHolder != null ? " (from " + plugin.getPlayerName(oldHolder) + ")" : "",
+                            NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false)));
+        }
+        if (sound) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                player.playSound(player, Sound.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
+            }
         }
     }
 
@@ -199,6 +226,9 @@ public class MythicManager {
     // config: mythics.<uuid>.name (MiniMessage) and mythics.<uuid>.holder
 
     private void load() {
+        broadcast = plugin.getConfig().getBoolean(ConfigKey.MYTHIC_BROADCAST.getPath(), true);
+        sound = plugin.getConfig().getBoolean(ConfigKey.MYTHIC_SOUND.getPath(), true);
+
         mythics.clear();
         ConfigurationSection section = plugin.getConfig().getConfigurationSection(ConfigKey.MYTHICS.getPath());
         if (section == null) return;

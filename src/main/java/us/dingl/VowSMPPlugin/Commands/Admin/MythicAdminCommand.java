@@ -1,6 +1,7 @@
 package us.dingl.VowSMPPlugin.Commands.Admin;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -20,9 +21,12 @@ import us.dingl.VowSMPPlugin.Mythics.MythicManager.Mythic;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 
 import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 /// /vow admin mythic make - turns the held item into a tracked mythic
 /// /vow admin mythic remove [id] - stops tracking the held mythic, or the one with that uuid
+/// /vow admin mythic broadcast|sound [enabled] - what happens when a mythic changes hands
 public class MythicAdminCommand implements SubCommand {
 
     private final VowSMPPlugin plugin;
@@ -46,7 +50,11 @@ public class MythicAdminCommand implements SubCommand {
                                     }
                                     return builder.buildFuture();
                                 })
-                                .executes(this::removeMythicById)));
+                                .executes(this::removeMythicById)))
+                .then(toggle("broadcast", "Chat broadcast", MythicManager::isBroadcastEnabled,
+                        MythicManager::setBroadcastEnabled))
+                .then(toggle("sound", "Sound", MythicManager::isSoundEnabled,
+                        MythicManager::setSoundEnabled));
     }
 
     private int makeMythic(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
@@ -121,5 +129,23 @@ public class MythicAdminCommand implements SubCommand {
         sender.sendMessage(Component.text("Removed ", NamedTextColor.YELLOW)
                 .append(mythic.name())
                 .append(Component.text(" from the mythics. It's a normal item again.", NamedTextColor.YELLOW)));
+    }
+
+    /// /vow admin mythic <name> [enabled] - no value flips it
+    private LiteralArgumentBuilder<CommandSourceStack> toggle(String name, String label,
+                                                              Predicate<MythicManager> get,
+                                                              BiConsumer<MythicManager, Boolean> set) {
+        return Commands.literal(name)
+                .executes(ctx -> setToggle(ctx, label, !get.test(plugin.getMythicManager()), set))
+                .then(Commands.argument("enabled", BoolArgumentType.bool())
+                        .executes(ctx -> setToggle(ctx, label, BoolArgumentType.getBool(ctx, "enabled"), set)));
+    }
+
+    private int setToggle(CommandContext<CommandSourceStack> ctx, String label, boolean enabled,
+                          BiConsumer<MythicManager, Boolean> set) {
+        set.accept(plugin.getMythicManager(), enabled);
+        ctx.getSource().getSender().sendMessage(Component.text(
+                label + " when a mythic changes hands is now " + (enabled ? "on" : "off") + ".", NamedTextColor.YELLOW));
+        return Command.SINGLE_SUCCESS;
     }
 }

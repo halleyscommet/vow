@@ -13,6 +13,8 @@ public enum ConfigKey {
     PLAYER_VOWS("player-vows"),
     GURU_TRUSTED("guru-trusted"),
     MYTHICS("mythics"),
+    MYTHIC_BROADCAST("mythic-transfer.broadcast"),
+    MYTHIC_SOUND("mythic-transfer.sound"),
     UPDATE_REPO("update-repo"),
     RESOURCE_PACK_URL("resource-pack.url"),
     RESOURCE_PACK_HASH("resource-pack.hash");
