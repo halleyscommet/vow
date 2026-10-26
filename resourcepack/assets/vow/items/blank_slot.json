@@ -1,0 +1,7 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "vow:item/blank_slot"
+  },
+  "oversized_in_gui": true
+}
