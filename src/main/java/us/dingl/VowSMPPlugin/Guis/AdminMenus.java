@@ -8,6 +8,8 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -46,6 +48,31 @@ public final class AdminMenus {
 
     private static final String LIST_PATTERN_BOTTOM = "<###B###>";
 
+    /// feedback sounds, played only to whoever clicked
+    private enum UiSound {
+        CLICK(Sound.UI_BUTTON_CLICK, 1f),
+        PAGE(Sound.ITEM_BOOK_PAGE_TURN, 1f),
+        ON(Sound.BLOCK_NOTE_BLOCK_PLING, 2f),
+        OFF(Sound.BLOCK_NOTE_BLOCK_BASS, 0.7f),
+        UP(Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.2f),
+        DOWN(Sound.BLOCK_NOTE_BLOCK_BASS, 0.9f),
+        SUCCESS(Sound.ENTITY_PLAYER_LEVELUP, 1.5f),
+        REMOVE(Sound.ENTITY_ITEM_BREAK, 1f),
+        ERROR(Sound.ENTITY_VILLAGER_NO, 1f);
+
+        private final Sound sound;
+        private final float pitch;
+
+        UiSound(Sound sound, float pitch) {
+            this.sound = sound;
+            this.pitch = pitch;
+        }
+
+        void play(Player player) {
+            player.playSound(player, sound, SoundCategory.MASTER, 0.6f, pitch);
+        }
+    }
+
     private final VowSMPPlugin plugin;
     private final Menu main;
     private final Menu players;
@@ -80,17 +107,17 @@ public final class AdminMenus {
                         "########U")
                 .bind('#', filler())
                 .bind('P', Button.of(item(Material.PLAYER_HEAD, "<gold><b>Players",
-                        "<gray>Lives, vows and immortals"), ctx -> ctx.open(players)))
+                        "<gray>Lives, vows and immortals"), ctx -> navigate(ctx, players)))
                 .bind('V', Button.of(item(Material.ENCHANTED_BOOK, "<light_purple><b>Vows",
-                        "<gray>Every vow and who has it"), ctx -> ctx.open(vows)))
+                        "<gray>Every vow and who has it"), ctx -> navigate(ctx, vows)))
                 .bind('M', Button.of(item(Material.NETHER_STAR, "<yellow><b>Mythics",
-                        "<gray>Who holds each mythic"), ctx -> ctx.open(mythics)))
+                        "<gray>Who holds each mythic"), ctx -> navigate(ctx, mythics)))
                 .bind('L', Button.builder()
                         .item(ctx -> plugin.getLeaderboardEnabled()
                                 ? item(Material.REDSTONE, "<dark_red><b>Disable Leaderboard")
                                 : item(Material.EMERALD, "<dark_green><b>Enable Leaderboard"))
                         .onClick(ctx -> {
-                            plugin.toggleLeaderboard();
+                            (plugin.toggleLeaderboard() ? UiSound.ON : UiSound.OFF).play(ctx.player());
                             ctx.refresh();
                         })
                         .build())
@@ -109,6 +136,7 @@ public final class AdminMenus {
                             Location location = target != null ? target.getLocation() : viewer.getLocation();
                             // +1 so the board floats above the block
                             plugin.setLeaderboardPosition(location.getBlockX(), location.getBlockY() + 1, location.getBlockZ());
+                            UiSound.SUCCESS.play(viewer);
                             ctx.refresh();
                         })
                         .build())
@@ -120,8 +148,9 @@ public final class AdminMenus {
                         .onClick(ctx -> {
                             if (plugin.getStorm().isActive()) {
                                 plugin.getStorm().stop();
+                                UiSound.OFF.play(ctx.player());
                             } else {
-                                plugin.getStorm().start(ctx.player(), false);
+                                (plugin.getStorm().start(ctx.player(), false) ? UiSound.ON : UiSound.ERROR).play(ctx.player());
                             }
                             ctx.refresh();
                         })
@@ -131,6 +160,7 @@ public final class AdminMenus {
                         "<gray>Downloads the latest release,",
                         "<gray>then restart to apply it"), ctx -> {
                     // chat is hidden behind the menu, so close it to show the progress
+                    UiSound.CLICK.play(ctx.player());
                     ctx.close();
                     plugin.getUpdater().update(ctx.player());
                 }))
@@ -181,7 +211,10 @@ public final class AdminMenus {
                     return vow == null
                             ? item(Material.BOOK, "<gray>No vow", "<gray>Click to give a vow")
                             : item(vow.icon(), "<gold><b>" + vow.name(), "<gray>Click to change");
-                }, ctx -> PaperGUIApi.get().open(ctx.player(), vowPicker, Map.of(TARGET, target(ctx)))))
+                }, ctx -> {
+                    UiSound.CLICK.play(ctx.player());
+                    PaperGUIApi.get().open(ctx.player(), vowPicker, Map.of(TARGET, target(ctx)));
+                }))
                 .bind('I', Button.builder()
                         .item(ctx -> isImmortal(target(ctx))
                                 ? item(Material.TOTEM_OF_UNDYING, "<green><b>Immortal",
@@ -192,8 +225,10 @@ public final class AdminMenus {
                             UUID id = target(ctx);
                             if (isImmortal(id)) {
                                 plugin.addPlayerToKilled(id);
+                                UiSound.REMOVE.play(ctx.player());
                             } else {
                                 plugin.revivePlayer(id);
+                                UiSound.SUCCESS.play(ctx.player());
                             }
                             ctx.refresh();
                         })
@@ -219,6 +254,7 @@ public final class AdminMenus {
     private void pickVow(ClickContext ctx, Vow vow) {
         UUID id = target(ctx);
         plugin.getVowManager().setVow(id, vow);
+        UiSound.SUCCESS.play(ctx.player());
         ctx.player().sendMessage(plugin.getPlayerName(id) + (vow == null ? " no longer has a vow" : " now has " + vow.name()));
         ctx.back();
     }
@@ -264,6 +300,7 @@ public final class AdminMenus {
                                     ItemStack held = c.player().getInventory().getItemInMainHand();
                                     manager.removeMythic(mythic, held);
                                     c.player().getInventory().setItemInMainHand(held);
+                                    UiSound.REMOVE.play(c.player());
                                     c.player().sendMessage(Component.text("Removed ").append(mythic.name())
                                             .append(Component.text(" from the mythics.")));
                                     c.refresh();
@@ -285,10 +322,12 @@ public final class AdminMenus {
                             ItemStack held = viewer.getInventory().getItemInMainHand();
                             if (held.isEmpty() || held.getAmount() > 1 || manager.getMythic(held) != null) {
                                 viewer.sendMessage(Component.text("Hold a single item that isn't already mythic."));
+                                UiSound.ERROR.play(viewer);
                                 return;
                             }
                             Mythic mythic = manager.makeMythic(held, viewer);
                             viewer.getInventory().setItemInMainHand(held);
+                            UiSound.SUCCESS.play(viewer);
                             viewer.sendMessage(Component.text("Made ").append(mythic.name()).append(Component.text(" a mythic.")));
                             ctx.refresh();
                         })
@@ -304,7 +343,9 @@ public final class AdminMenus {
                         : item(icon, "<red><b>" + label + ": Off", "<gray>When a mythic changes hands", "<gray>Click to turn on"))
                 .priority(1) // above the filler in that slot
                 .onClick(ctx -> {
-                    set.accept(!get.getAsBoolean());
+                    boolean enabled = !get.getAsBoolean();
+                    set.accept(enabled);
+                    (enabled ? UiSound.ON : UiSound.OFF).play(ctx.player());
                     ctx.refresh();
                 })
                 .build();
@@ -346,20 +387,29 @@ public final class AdminMenus {
                 .bind('<', Button.builder()
                         .item(item(Material.ARROW, "<white>Previous Page"))
                         .viewRequirement(ctx -> ctx.session().hasPreviousPage(page))
-                        .onClick(ctx -> ctx.session().previousPage(page))
+                        .onClick(ctx -> {
+                            UiSound.PAGE.play(ctx.player());
+                            ctx.session().previousPage(page);
+                        })
                         .priority(1)
                         .build())
                 .bind('>', Button.builder()
                         .item(item(Material.ARROW, "<white>Next Page"))
                         .viewRequirement(ctx -> ctx.session().hasNextPage(page))
-                        .onClick(ctx -> ctx.session().nextPage(page))
+                        .onClick(ctx -> {
+                            UiSound.PAGE.play(ctx.player());
+                            ctx.session().nextPage(page);
+                        })
                         .priority(1)
                         .build())
                 .build();
     }
 
     private Button backButton() {
-        return Button.of(item(Material.OAK_DOOR, "<white>Back"), ClickContext::back);
+        return Button.of(item(Material.OAK_DOOR, "<white>Back"), ctx -> {
+            UiSound.CLICK.play(ctx.player());
+            ctx.back();
+        });
     }
 
     private static Button filler() {
@@ -383,11 +433,21 @@ public final class AdminMenus {
     }
 
     private void changeLives(ClickContext ctx, UUID id, int change) {
-        plugin.updatePlayerLifeCounter(id, change);
+        int before = plugin.getPlayerLives(id);
+        int after = plugin.updatePlayerLifeCounter(id, change);
+        // already at 0 or max
+        UiSound sound = after == before ? UiSound.ERROR : change > 0 ? UiSound.UP : UiSound.DOWN;
+        sound.play(ctx.player());
         ctx.refresh();
     }
 
+    private void navigate(ClickContext ctx, Menu menu) {
+        UiSound.CLICK.play(ctx.player());
+        ctx.open(menu);
+    }
+
     private void openPlayer(ClickContext ctx, UUID id) {
+        UiSound.CLICK.play(ctx.player());
         PaperGUIApi.get().open(ctx.player(), player, Map.of(TARGET, id));
     }
 
