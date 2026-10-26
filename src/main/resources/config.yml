@@ -2,9 +2,12 @@ leaderboard-enabled: false
 
 update-repo: "halleyscommet/vow"
 
+# source: "release" sends the pack attached to this version's GitHub release (built from resourcepack/),
+#         "config" sends the pack at url below (hash is its sha1, optional but lets clients cache it)
 resource-pack:
-  url: "https://1.dingl.us/files/share/589d584501bb4d89aca1adcf5cb54168/download"
-  hash: "2108e1a0d49bc7343343cc3bb9e54bb078ad6608"
+  source: "release"
+  url: ""
+  hash: ""
 
 logged-players: []
 killed-players: []

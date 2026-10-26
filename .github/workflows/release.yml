@@ -1,5 +1,6 @@
 # pushing a tag like v1.0.3 builds the plugin and attaches the jar to a GitHub release,
-# which /vow admin update then downloads
+# which /vow admin update then downloads. The resource pack zip is attached too, and the plugin
+# sends players that release's copy.
 name: Release
 
 on:
@@ -29,5 +30,7 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: target/VowSMPPlugin-*.jar
+          files: |
+            target/VowSMPPlugin-*.jar
+            target/VowResourcePack.zip
           generate_release_notes: true

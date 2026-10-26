@@ -28,6 +28,32 @@
                     <target>${java.version}</target>
                 </configuration>
             </plugin>
+            <!-- zips resourcepack/ (attached to each release next to the jar) and bakes its SHA-1 into the
+                 jar, so the plugin always sends the pack built alongside it -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>resource-pack</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <zip destfile="${project.build.directory}/VowResourcePack.zip"
+                                     basedir="${project.basedir}/resourcepack"/>
+                                <checksum file="${project.build.directory}/VowResourcePack.zip"
+                                          algorithm="SHA-1" property="pack.sha1"/>
+                                <echo file="${project.build.outputDirectory}/resource-pack.properties"
+                                      message="sha1=${pack.sha1}"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
         <resources>
             <resource>

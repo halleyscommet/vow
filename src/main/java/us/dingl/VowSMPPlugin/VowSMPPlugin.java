@@ -63,6 +63,7 @@ public final class VowSMPPlugin extends JavaPlugin {
     private VowManager vowManager;
     private MythicManager mythicManager;
     private Updater updater;
+    private ResourcePackListener resourcePackListener;
 
     private HeadCache headCache;
     private AdminMenus adminMenus;
@@ -186,6 +187,10 @@ public final class VowSMPPlugin extends JavaPlugin {
 
     public VowManager getVowManager() {
         return vowManager;
+    }
+
+    public ResourcePackListener getResourcePackListener() {
+        return resourcePackListener;
     }
 
     public Updater getUpdater() {
@@ -427,10 +432,11 @@ public final class VowSMPPlugin extends JavaPlugin {
     }
 
     private void registerListeners() {
+        resourcePackListener = new ResourcePackListener(this);
         registerListeners(
                 new LoginListener(this),
                 new DeathListener(this),
-                new ResourcePackListener(this),
+                resourcePackListener,
                 new StormConfinementListener(this, storm),
                 new ClaimLifeListener(this),
                 //new CombatLogListener(),

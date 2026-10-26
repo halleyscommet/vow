@@ -16,6 +16,7 @@ public enum ConfigKey {
     MYTHIC_BROADCAST("mythic-transfer.broadcast"),
     MYTHIC_SOUND("mythic-transfer.sound"),
     UPDATE_REPO("update-repo"),
+    RESOURCE_PACK_SOURCE("resource-pack.source"),
     RESOURCE_PACK_URL("resource-pack.url"),
     RESOURCE_PACK_HASH("resource-pack.hash");
 

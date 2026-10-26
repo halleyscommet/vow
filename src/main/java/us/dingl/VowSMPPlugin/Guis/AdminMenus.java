@@ -13,6 +13,9 @@ import org.bukkit.SoundCategory;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import us.dingl.VowSMPPlugin.Listeners.ResourcePackListener;
+import us.dingl.VowSMPPlugin.Listeners.ResourcePackListener.Pack;
+import us.dingl.VowSMPPlugin.Listeners.ResourcePackListener.Source;
 import us.dingl.VowSMPPlugin.Mythics.MythicManager;
 import us.dingl.VowSMPPlugin.Mythics.MythicManager.Mythic;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
@@ -104,7 +107,7 @@ public final class AdminMenus {
                 .pattern(
                         "#########",
                         "#PVM#LTS#",
-                        "########U")
+                        "#######RU")
                 .bind('#', filler())
                 .bind('P', Button.of(item(Material.PLAYER_HEAD, "<gold><b>Players",
                         "<gray>Lives, vows and immortals"), ctx -> navigate(ctx, players)))
@@ -152,6 +155,28 @@ public final class AdminMenus {
                             } else {
                                 (plugin.getStorm().start(ctx.player(), false) ? UiSound.ON : UiSound.ERROR).play(ctx.player());
                             }
+                            ctx.refresh();
+                        })
+                        .build())
+                .bind('R', Button.builder()
+                        .item(ctx -> {
+                            ResourcePackListener packs = plugin.getResourcePackListener();
+                            Pack pack = packs.currentPack();
+                            boolean release = packs.getSource() == Source.RELEASE;
+                            List<String> lore = new ArrayList<>();
+                            lore.add(release ? "<gray>Sending the pack from this version's release"
+                                    : "<gray>Sending resource-pack.url from config");
+                            if (pack.problem() != null) lore.add("<red>Nothing is being sent: " + pack.problem());
+                            lore.add("<gray>Click to switch to " + (release ? "config" : "release"));
+                            lore.add("<gray>(resends it to everyone online)");
+                            return item(Material.PAINTING, "<gold><b>Resource Pack: " + (release ? "Release" : "Config"),
+                                    lore.toArray(String[]::new));
+                        })
+                        .onClick(ctx -> {
+                            ResourcePackListener packs = plugin.getResourcePackListener();
+                            Source next = packs.getSource() == Source.RELEASE ? Source.CONFIG : Source.RELEASE;
+                            packs.setSource(next);
+                            (packs.currentPack().problem() != null ? UiSound.ERROR : UiSound.SUCCESS).play(ctx.player());
                             ctx.refresh();
                         })
                         .build())
