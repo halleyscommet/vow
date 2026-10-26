@@ -171,8 +171,8 @@ public final class AdminMenus {
                             if (pack.problem() != null) lore.add("<red>Nothing is being sent: " + pack.problem());
                             lore.add("<gray>Click to switch to " + (release ? "config" : "release"));
                             lore.add("<gray>(resends it to everyone online)");
-                            return ui("ui_resource_pack", item(Material.PAINTING,
-                                    "<gold><b>Resource Pack: " + (release ? "Release" : "Config"), lore.toArray(String[]::new)));
+                            return item(Material.PAINTING,
+                                    "<gold><b>Resource Pack: " + (release ? "Release" : "Config"), lore.toArray(String[]::new));
                         })
                         .onClick(ctx -> {
                             ResourcePackListener packs = plugin.getResourcePackListener();
@@ -280,11 +280,11 @@ public final class AdminMenus {
                 .build();
     }
 
-    /// a heart showing their lives, stacked to match so the count shows on the slot
+    /// their lives, stacked to match so the count shows on the slot
     private ItemStack livesItem(UUID id, String... extraLore) {
         int count = plugin.getPlayerLives(id);
-        ItemStack item = ui("ui_heart", item(Material.RED_DYE,
-                "<red><b>Lives: " + count + "/" + VowSMPPlugin.MAX_LIVES, extraLore));
+        ItemStack item = item(Material.RED_DYE,
+                "<red><b>Lives: " + count + "/" + VowSMPPlugin.MAX_LIVES, extraLore);
         item.setAmount(Math.max(1, count));
         return item;
     }
