@@ -40,6 +40,7 @@ import us.dingl.VowSMPPlugin.Vows.Impl.HarperVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.HazelVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.IceVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.KarmaVow;
+import us.dingl.VowSMPPlugin.Vows.Impl.TwoLifeDeathVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.WhimplyVow;
 import us.dingl.VowSMPPlugin.Vows.VowManager;
 import us.dingl.paperGUI.api.PaperGUIApi;
@@ -442,6 +443,7 @@ public final class VowSMPPlugin extends JavaPlugin {
         vowManager.register(new IceVow(this));
         vowManager.register(new WhimplyVow(this));
         vowManager.register(new HazelVow(this));
+        vowManager.register(new TwoLifeDeathVow(this));
         // new vows go here
     }
 
