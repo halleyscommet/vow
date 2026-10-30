@@ -24,8 +24,12 @@ jobs:
 
       - name: Build
         run: |
-          # the tag is the version, so the pom never needs bumping by hand
-          mvn -B versions:set -DnewVersion="${GITHUB_REF_NAME#v}" -DgenerateBackupPoms=false
+          # the pom's version has to match the tag - bump it in the commit you tag
+          pom_version=$(mvn -B -q help:evaluate -Dexpression=project.version -DforceStdout)
+          if [ "$pom_version" != "${GITHUB_REF_NAME#v}" ]; then
+            echo "::error::pom.xml version is $pom_version but the tag is $GITHUB_REF_NAME"
+            exit 1
+          fi
           mvn -B package
 
       - uses: softprops/action-gh-release@v2
