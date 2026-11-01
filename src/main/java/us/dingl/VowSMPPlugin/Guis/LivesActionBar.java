@@ -83,8 +83,12 @@ public final class LivesActionBar {
             lives = Component.text("Lives: " + count + "/" + VowSMPPlugin.MAX_LIVES, color);
         }
 
-        Vow vow = plugin.getVowManager().getVow(id);
-        Component status = vow == null ? null : vow.actionBarStatus(player);
+        Component status = null;
+        for (Vow vow : plugin.getVowManager().getVows(id)) {
+            Component part = vow.actionBarStatus(player);
+            if (part == null) continue;
+            status = status == null ? part : status.append(Component.text("  |  ", NamedTextColor.DARK_GRAY)).append(part);
+        }
 
         if (lives == null) return status;
         if (status == null) return lives;

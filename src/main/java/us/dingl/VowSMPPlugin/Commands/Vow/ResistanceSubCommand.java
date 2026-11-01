@@ -26,7 +26,7 @@ public class ResistanceSubCommand implements SubCommand {
                 .requires(CommandUtil.vowHolder(plugin, KarmaVow.class, Permissions.RESISTANCE))
                 .executes(ctx -> {
                     Player player = CommandUtil.requirePlayer(ctx);
-                    if (!(plugin.getVowManager().getVow(player.getUniqueId()) instanceof KarmaVow karma)) {
+                    if (!(plugin.getVowManager().getVow(player.getUniqueId(), KarmaVow.class) instanceof KarmaVow karma)) {
                         player.sendMessage(Component.text("Only the Karma vow can use this.", NamedTextColor.RED));
                         return 0;
                     }

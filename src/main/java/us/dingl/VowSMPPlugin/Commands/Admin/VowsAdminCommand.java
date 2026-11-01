@@ -3,6 +3,7 @@ package us.dingl.VowSMPPlugin.Commands.Admin;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -36,15 +37,34 @@ public class VowsAdminCommand implements SubCommand {
                 .then(Commands.literal("list").executes(this::list))
                 .then(Commands.literal("set")
                         .then(Commands.argument("player", ArgumentTypes.player())
-                                .then(Commands.argument("vow", StringArgumentType.word())
-                                        .suggests((ctx, builder) -> {
-                                            plugin.getVowManager().getVows().forEach(v -> builder.suggest(v.id()));
-                                            return builder.buildFuture();
-                                        })
-                                        .executes(this::set))))
+                                .then(vowArgument().executes(this::set))))
+                .then(Commands.literal("add")
+                        .then(Commands.argument("player", ArgumentTypes.player())
+                                .then(vowArgument().executes(this::add))))
+                .then(Commands.literal("remove")
+                        .then(Commands.argument("player", ArgumentTypes.player())
+                                .then(vowArgument().executes(this::remove))))
                 .then(Commands.literal("clear")
                         .then(Commands.argument("player", ArgumentTypes.player())
                                 .executes(this::clear)));
+    }
+
+    private RequiredArgumentBuilder<CommandSourceStack, String> vowArgument() {
+        return Commands.argument("vow", StringArgumentType.word())
+                .suggests((ctx, builder) -> {
+                    plugin.getVowManager().getVows().forEach(v -> builder.suggest(v.id()));
+                    return builder.buildFuture();
+                });
+    }
+
+    /// null (after telling the sender) if there's no such vow
+    private Vow vowArg(CommandContext<CommandSourceStack> ctx) {
+        String vowId = StringArgumentType.getString(ctx, "vow");
+        Vow vow = plugin.getVowManager().getVowById(vowId);
+        if (vow == null) {
+            ctx.getSource().getSender().sendMessage(Component.text("Unknown vow: " + vowId, NamedTextColor.RED));
+        }
+        return vow;
     }
 
     private int list(CommandContext<CommandSourceStack> ctx) {
@@ -66,25 +86,61 @@ public class VowsAdminCommand implements SubCommand {
         return Command.SINGLE_SUCCESS;
     }
 
+    /// replaces all of their vows with this one
     private int set(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        Player target = CommandUtil.getPlayer(ctx, "player");
+        Vow vow = vowArg(ctx);
+        if (vow == null) return 0;
+
+        plugin.getVowManager().setVow(target.getUniqueId(), vow);
+        ctx.getSource().getSender().sendMessage(target.getName() + " now has only " + vow.name());
+        return Command.SINGLE_SUCCESS;
+    }
+
+    /// gives them another vow, if they have a free slot
+    private int add(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSender sender = ctx.getSource().getSender();
         Player target = CommandUtil.getPlayer(ctx, "player");
-        String vowId = StringArgumentType.getString(ctx, "vow");
+        Vow vow = vowArg(ctx);
+        if (vow == null) return 0;
 
-        Vow vow = plugin.getVowManager().getVowById(vowId);
-        if (vow == null) {
-            sender.sendMessage(Component.text("Unknown vow: " + vowId, NamedTextColor.RED));
+        VowManager vows = plugin.getVowManager();
+        UUID id = target.getUniqueId();
+        switch (vows.addVow(id, vow)) {
+            case ADDED -> {
+                sender.sendMessage(target.getName() + " now has " + vow.name());
+                return Command.SINGLE_SUCCESS;
+            }
+            case ALREADY_HAS -> sender.sendMessage(Component.text(target.getName() + " already has " + vow.name(),
+                    NamedTextColor.RED));
+            case NO_FREE_SLOT -> {
+                int next = vows.livesForNextSlot(id);
+                sender.sendMessage(Component.text(target.getName() + " has no free vow slots ("
+                        + vows.getVows(id).size() + "/" + vows.getSlots(id) + ")"
+                        + (next > 0 ? " - they need " + next + " lives for another" : ""), NamedTextColor.RED));
+            }
+        }
+        return 0;
+    }
+
+    private int remove(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSender sender = ctx.getSource().getSender();
+        Player target = CommandUtil.getPlayer(ctx, "player");
+        Vow vow = vowArg(ctx);
+        if (vow == null) return 0;
+
+        if (!plugin.getVowManager().removeVow(target.getUniqueId(), vow)) {
+            sender.sendMessage(Component.text(target.getName() + " doesn't have " + vow.name(), NamedTextColor.RED));
             return 0;
         }
-        plugin.getVowManager().setVow(target.getUniqueId(), vow);
-        sender.sendMessage(target.getName() + " now has " + vow.name());
+        sender.sendMessage(target.getName() + " no longer has " + vow.name());
         return Command.SINGLE_SUCCESS;
     }
 
     private int clear(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         Player target = CommandUtil.getPlayer(ctx, "player");
         plugin.getVowManager().setVow(target.getUniqueId(), null);
-        ctx.getSource().getSender().sendMessage(target.getName() + " no longer has a vow");
+        ctx.getSource().getSender().sendMessage(target.getName() + " no longer has any vows");
         return Command.SINGLE_SUCCESS;
     }
 }

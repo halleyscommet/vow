@@ -45,7 +45,7 @@ public final class CommandUtil {
             if (sender.hasPermission(Permissions.ADMIN)) return true;
             return sender instanceof Player player
                     && sender.hasPermission(permission)
-                    && vow.isInstance(plugin.getVowManager().getVow(player.getUniqueId()));
+                    && plugin.getVowManager().getVow(player.getUniqueId(), vow) != null;
         };
     }
 

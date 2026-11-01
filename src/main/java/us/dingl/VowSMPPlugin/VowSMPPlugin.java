@@ -357,6 +357,11 @@ public final class VowSMPPlugin extends JavaPlugin {
             livesActionBar.update(id);
         }
 
+        // losing lives can lose vow slots
+        if (updated < current && vowManager != null) {
+            vowManager.enforceSlots(id);
+        }
+
         return updated;
     }
 

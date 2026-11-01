@@ -3,6 +3,7 @@ package us.dingl.VowSMPPlugin.Guis;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Location;
@@ -21,6 +22,7 @@ import us.dingl.VowSMPPlugin.Mythics.MythicManager;
 import us.dingl.VowSMPPlugin.Mythics.MythicManager.Mythic;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 import us.dingl.VowSMPPlugin.Vows.Vow;
+import us.dingl.VowSMPPlugin.Vows.VowManager;
 import us.dingl.paperGUI.api.PaperGUIApi;
 import us.dingl.paperGUI.api.menu.Button;
 import us.dingl.paperGUI.api.menu.ClickContext;
@@ -35,6 +37,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -206,12 +209,7 @@ public final class AdminMenus {
                 .bind('H', Button.of(ctx -> playerHead(target(ctx)), ctx -> { }))
                 .bind('L', Button.of(ctx -> livesItem(target(ctx), "<gray>Click to change"),
                         ctx -> openFor(ctx, lives, target(ctx))))
-                .bind('V', Button.of(ctx -> {
-                    Vow vow = plugin.getVowManager().getVow(target(ctx));
-                    return vow == null
-                            ? item(Material.BOOK, "<gray>No vow", "<gray>Click to give a vow")
-                            : item(vow.icon(), "<gold><b>" + vow.name(), "<gray>Click to change");
-                }, ctx -> openFor(ctx, vowPicker, target(ctx))))
+                .bind('V', Button.of(ctx -> vowsItem(target(ctx)), ctx -> openFor(ctx, vowPicker, target(ctx))))
                 .bind('I', Button.builder()
                         .item(ctx -> isImmortal(target(ctx))
                                 ? item(Material.TOTEM_OF_UNDYING, "<green><b>Immortal",
@@ -243,6 +241,28 @@ public final class AdminMenus {
                         })
                         .build())
                 .build();
+    }
+
+    /// their vows and how many slots they have
+    private ItemStack vowsItem(UUID id) {
+        VowManager manager = plugin.getVowManager();
+        List<Vow> held = manager.getVows(id);
+        int slots = manager.getSlots(id);
+
+        List<String> lore = new ArrayList<>();
+        for (Vow vow : held) lore.add("<white> - " + vow.name());
+        lore.add("<gray>Slots: " + held.size() + "/" + slots);
+        int next = manager.livesForNextSlot(id);
+        if (next > 0) lore.add("<dark_gray>Another slot at " + next + " lives");
+        lore.add("<gray>Click to change");
+
+        if (held.isEmpty()) {
+            return item(Material.BOOK, "<gray>No vow", lore.toArray(String[]::new));
+        }
+        String title = held.size() == 1 ? held.getFirst().name() : held.size() + " Vows";
+        ItemStack item = item(held.getFirst().icon(), "<gold><b>" + title, lore.toArray(String[]::new));
+        item.setAmount(held.size());
+        return item;
     }
 
     private void changeKills(ClickContext ctx, UUID id, int change) {
@@ -290,23 +310,65 @@ public final class AdminMenus {
         return listMenu("vow_admin_vow_picker", "Pick a Vow", Pagination.builder("vows")
                 .slots(Slots.range(0, 44))
                 .items(ctx -> {
+                    UUID id = target(ctx);
                     List<Button> buttons = new ArrayList<>();
-                    buttons.add(Button.of(item(Material.BARRIER, "<red><b>No Vow", "<gray>Clears their vow"),
-                            click -> pickVow(click, null)));
+                    buttons.add(Button.of(item(Material.BARRIER, "<red><b>No Vow", "<gray>Clears all their vows"),
+                            click -> clearVows(click)));
                     for (Vow vow : plugin.getVowManager().getVows()) {
-                        buttons.add(Button.of(vowItem(vow), click -> pickVow(click, vow)));
+                        buttons.add(Button.of(c -> pickerItem(id, vow), click -> pickVow(click, vow)));
                     }
                     return buttons;
                 })
                 .build());
     }
 
+    private ItemStack pickerItem(UUID id, Vow vow) {
+        ItemStack item = vowItem(vow);
+        boolean held = plugin.getVowManager().hasVow(id, vow);
+        item.editMeta(meta -> {
+            List<Component> lore = new ArrayList<>(Objects.requireNonNullElse(meta.lore(), List.of()));
+            lore.add(Component.empty());
+            lore.add(text(held ? "<red>Click to take it away" : "<green>Click to give it"));
+            meta.lore(lore);
+            if (held) meta.setEnchantmentGlintOverride(true);
+        });
+        return item;
+    }
+
+    private void clearVows(ClickContext ctx) {
+        UUID id = target(ctx);
+        plugin.getVowManager().setVow(id, null);
+        UiSound.REMOVE.play(ctx.player());
+        ctx.player().sendMessage(plugin.getPlayerName(id) + " no longer has any vows");
+        ctx.back();
+    }
+
+    /// toggles the vow. With one slot, giving a new vow swaps out the old one;
+    /// with more, they need a free slot first
     private void pickVow(ClickContext ctx, Vow vow) {
         UUID id = target(ctx);
-        plugin.getVowManager().setVow(id, vow);
+        VowManager manager = plugin.getVowManager();
+        String name = plugin.getPlayerName(id);
+
+        if (manager.removeVow(id, vow)) {
+            UiSound.REMOVE.play(ctx.player());
+            ctx.player().sendMessage(name + " no longer has " + vow.name());
+            ctx.refresh();
+            return;
+        }
+
+        if (manager.addVow(id, vow) == VowManager.AddResult.NO_FREE_SLOT) {
+            if (manager.getSlots(id) > 1) {
+                UiSound.ERROR.play(ctx.player());
+                ctx.player().sendMessage(Component.text(name + " has no free vow slots - take one away first.",
+                        NamedTextColor.RED));
+                return;
+            }
+            manager.setVow(id, vow);
+        }
         UiSound.SUCCESS.play(ctx.player());
-        ctx.player().sendMessage(plugin.getPlayerName(id) + (vow == null ? " no longer has a vow" : " now has " + vow.name()));
-        ctx.back();
+        ctx.player().sendMessage(name + " now has " + vow.name());
+        ctx.refresh();
     }
 
     // vows
@@ -510,10 +572,11 @@ public final class AdminMenus {
     }
 
     private ItemStack playerHead(UUID id, String... extraLore) {
-        Vow vow = plugin.getVowManager().getVow(id);
+        List<Vow> vows = plugin.getVowManager().getVows(id);
         List<Component> lore = new ArrayList<>();
         lore.add(text("<green>Lives: " + plugin.getPlayerLives(id) + "/" + VowSMPPlugin.MAX_LIVES));
-        lore.add(text("<gray>Vow: <white>" + (vow == null ? "none" : vow.name())));
+        lore.add(text("<gray>" + (vows.size() > 1 ? "Vows" : "Vow") + ": <white>"
+                + (vows.isEmpty() ? "none" : String.join(", ", vows.stream().map(Vow::name).toList()))));
         lore.add(text(isImmortal(id) ? "<gold>Immortal" : "<dark_gray>Has died"));
         lore.add(text("<gray>Kills: <white>" + plugin.getPlayerKills(id)));
         if (extraLore.length > 0) {

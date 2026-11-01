@@ -36,7 +36,7 @@ public class TrustSubCommand implements SubCommand {
                 .then(Commands.argument("player", StringArgumentType.word())
                         .suggests((ctx, builder) -> {
                             if (ctx.getSource().getSender() instanceof Player player
-                                    && plugin.getVowManager().getVow(player.getUniqueId()) instanceof GuruVow guru) {
+                                    && plugin.getVowManager().getVow(player.getUniqueId(), GuruVow.class) instanceof GuruVow guru) {
                                 // trusted players too, so offline ones can be untrusted
                                 guru.getTrusted(player.getUniqueId()).forEach(id -> builder.suggest(plugin.getPlayerName(id)));
                             }
@@ -93,7 +93,7 @@ public class TrustSubCommand implements SubCommand {
     }
 
     private GuruVow requireGuru(Player player) {
-        if (plugin.getVowManager().getVow(player.getUniqueId()) instanceof GuruVow guru) {
+        if (plugin.getVowManager().getVow(player.getUniqueId(), GuruVow.class) instanceof GuruVow guru) {
             return guru;
         }
         player.sendMessage(Component.text("Only the Guru vow can trust players.", NamedTextColor.RED));

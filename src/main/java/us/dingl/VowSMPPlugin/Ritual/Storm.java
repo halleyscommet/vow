@@ -231,8 +231,7 @@ public final class Storm {
     public void reward(Player player) {
         plugin.updatePlayerLifeCounter(player.getUniqueId(), 3);
         player.sendMessage(Component.text("Congrats! You now have 3 lives!", NamedTextColor.GREEN));
-        Vow vow = plugin.getVowManager().getVow(player.getUniqueId());
-        if (vow != null) {
+        for (Vow vow : plugin.getVowManager().getVows(player.getUniqueId())) {
             vow.onRitualComplete(player);
         }
         Bukkit.broadcast(Component.text("The revival for ").append(Component.text(player.getName()).color(NamedTextColor.DARK_GREEN).decorate(TextDecoration.ITALIC, TextDecoration.BOLD)).append(Component.text(" has been finished!")));

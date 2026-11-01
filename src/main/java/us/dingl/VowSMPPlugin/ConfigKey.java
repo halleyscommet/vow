@@ -16,6 +16,7 @@ public enum ConfigKey {
     PLAYER_LIVES("player-lives"),
     LIVES_SHOWN("lives-shown"),
     PLAYER_VOWS("player-vows"),
+    EXTRA_VOW_LIVES("extra-vow-lives"),
     GURU_TRUSTED("guru-trusted"),
     MYTHICS("mythics"),
     MYTHIC_BROADCAST("mythic-transfer.broadcast"),

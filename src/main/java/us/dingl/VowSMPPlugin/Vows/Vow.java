@@ -10,6 +10,8 @@ import us.dingl.VowSMPPlugin.VowSMPPlugin;
 ///
 /// Every vow is also registered as a Listener, so you can add @EventHandler methods for anything
 /// the hooks don't cover. Those fire for EVERY player though, so guard them with {@link #has(Player)}.
+///
+/// A player can hold several vows at once (see VowManager), so write each vow to work alongside any other.
 public abstract class Vow implements Listener {
 
     protected final VowSMPPlugin plugin;
@@ -44,6 +46,7 @@ public abstract class Vow implements Listener {
     public void onRitualComplete(Player player) {}
 
     /// how many lives the player loses on this death. {@code lost} is the default (1).
+    /// With several vows, each answers separately and the highest answer is used.
     /// Whatever is lost goes to the killer, or drops as life items if they can't take it.
     public int livesLostOnDeath(Player player, int livesBefore, int lost) {
         return lost;
@@ -57,6 +60,6 @@ public abstract class Vow implements Listener {
 
     /// true if this player currently has this vow - use it to guard @EventHandler methods
     protected boolean has(Player player) {
-        return plugin.getVowManager().getVow(player.getUniqueId()) == this;
+        return plugin.getVowManager().hasVow(player.getUniqueId(), this);
     }
 }

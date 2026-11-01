@@ -16,6 +16,10 @@ killed-players: []
 player-lives: {}
 # uuid -> player kills counted while the kills leaderboard was on
 player-kills: {}
+# each life count here unlocks one more vow slot while a player has at least that many lives.
+# Everyone gets 1 slot; dropping below a count takes away their newest vow.
+extra-vow-lives: [7]
+# uuid -> list of vow ids, oldest first
 player-vows: {}
 # guru uuid -> uuids of players his smite never targets (/vow trust)
 guru-trusted: {}

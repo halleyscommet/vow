@@ -32,7 +32,7 @@ public class AreaMineSubCommand implements SubCommand {
 
     /// null flips the current setting
     private int set(Player player, Boolean enabled) {
-        if (!(plugin.getVowManager().getVow(player.getUniqueId()) instanceof HaleyVow haley)) {
+        if (!(plugin.getVowManager().getVow(player.getUniqueId(), HaleyVow.class) instanceof HaleyVow haley)) {
             player.sendMessage(Component.text("Only the Haley vow can mine 3x3.", NamedTextColor.RED));
             return 0;
         }
