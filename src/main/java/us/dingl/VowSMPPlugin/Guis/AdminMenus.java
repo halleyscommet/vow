@@ -526,6 +526,11 @@ public final class AdminMenus {
 
     /// 6 rows: the list fills the top 5, the bottom row has page arrows and a back button
     Menu listMenu(String id, String title, Pagination pagination) {
+        return listMenu(id, title, pagination, backButton());
+    }
+
+    /// same, with a custom back button - binds can't be added after building (toBuilder drops the pattern)
+    Menu listMenu(String id, String title, Pagination pagination, Button back) {
         String page = pagination.id();
         return Menu.builder(id)
                 .rows(6)
@@ -540,7 +545,7 @@ public final class AdminMenus {
                         "         ",
                         LIST_PATTERN_BOTTOM)
                 .bind('#', filler())
-                .bind('B', backButton())
+                .bind('B', back)
                 // the arrows sit on top of filler and only show when there's somewhere to go
                 .bind('<', filler())
                 .bind('>', filler())

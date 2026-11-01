@@ -249,18 +249,12 @@ public final class ItemBuilderMenus {
                         .items(ctx -> plugin.getAbilityManager().getAbilities().stream()
                                 .map(this::abilityButton)
                                 .toList())
-                        .build())
-                .toBuilder()
+                        .build(),
                 // back goes to the builder even after a dialog, which loses the menu history
-                .bind('B', Button.builder()
-                        .item(ui("ui_back", item(Material.OAK_DOOR, "<white>Back")))
-                        .onClick(ctx -> {
-                            UiSound.CLICK.play(ctx.player());
-                            open(ctx.player(), builder, slot(ctx));
-                        })
-                        .priority(1)
-                        .build())
-                .build();
+                Button.of(ui("ui_back", item(Material.OAK_DOOR, "<white>Back")), ctx -> {
+                    UiSound.CLICK.play(ctx.player());
+                    open(ctx.player(), builder, slot(ctx));
+                }));
     }
 
     private Button abilityButton(ItemAbility ability) {
