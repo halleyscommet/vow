@@ -3,7 +3,6 @@ package us.dingl.VowSMPPlugin;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.*;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
@@ -66,6 +65,7 @@ public final class VowSMPPlugin extends JavaPlugin {
     public static final int MAX_LIVES = 7;
 
     private Leaderboard leaderboard;
+    private Leaderboard killsLeaderboard;
     private Storm storm;
     private VowManager vowManager;
     private MythicManager mythicManager;
@@ -90,7 +90,8 @@ public final class VowSMPPlugin extends JavaPlugin {
 
         Permissions.register(getServer().getPluginManager());
 
-        leaderboard = new Leaderboard(this);
+        leaderboard = Leaderboard.immortals(this);
+        killsLeaderboard = Leaderboard.kills(this);
         storm = new Storm(this);
         LifeItem.init(this);
         RitualItem.init(this);
@@ -112,8 +113,11 @@ public final class VowSMPPlugin extends JavaPlugin {
         adminMenus = new AdminMenus(this);
         headCache.start();
 
-        // worlds might not exist yet during onEnable, so spawn the leaderboard next tick
-        getServer().getScheduler().runTask(this, leaderboard::refresh);
+        // worlds might not exist yet during onEnable, so spawn the leaderboards next tick
+        getServer().getScheduler().runTask(this, () -> {
+            leaderboard.refresh();
+            killsLeaderboard.refresh();
+        });
 
         // register recipe
         NamespacedKey curtanaKey = new NamespacedKey(this, "curtana");
@@ -226,61 +230,12 @@ public final class VowSMPPlugin extends JavaPlugin {
         return livesActionBar;
     }
 
-    // leaderboard
-    public boolean getLeaderboardEnabled() {
-        return getConfig().getBoolean(ConfigKey.LEADERBOARD_ENABLED.getPath(), false);
+    public Leaderboard getLeaderboard() {
+        return leaderboard;
     }
 
-    public void setLeaderboardEnabled(boolean enabled) {
-        getConfig().set(ConfigKey.LEADERBOARD_ENABLED.getPath(), enabled);
-        saveConfig();
-    }
-
-    /// flips the leaderboard on/off and spawns/removes the display. Returns the new state.
-    public boolean toggleLeaderboard() {
-        boolean enabled = !getLeaderboardEnabled();
-        setLeaderboardEnabled(enabled);
-        if (enabled) {
-            leaderboard.refresh();
-        } else {
-            leaderboard.hide();
-        }
-        return enabled;
-    }
-
-    /// the block position stored in config, or world spawn if none was ever set.
-    /// null only if no worlds are loaded.
-    public Location getLeaderboardLocation() {
-        if (Bukkit.getWorlds().isEmpty()) {
-            return null;
-        }
-        World world = Bukkit.getWorlds().getFirst();
-        FileConfiguration config = getConfig();
-
-        if (!config.isSet(ConfigKey.LEADERBOARD_X.getPath())
-                || !config.isSet(ConfigKey.LEADERBOARD_Y.getPath())
-                || !config.isSet(ConfigKey.LEADERBOARD_Z.getPath())) {
-            return world.getSpawnLocation();
-        }
-
-        int x = config.getInt(ConfigKey.LEADERBOARD_X.getPath());
-        int y = Math.clamp(config.getInt(ConfigKey.LEADERBOARD_Y.getPath()), world.getMinHeight(), world.getMaxHeight());
-        int z = config.getInt(ConfigKey.LEADERBOARD_Z.getPath());
-        return new Location(world, x, y, z);
-    }
-
-    /// saves the new position (one disk write) and moves the display if it's enabled.
-    public void setLeaderboardPosition(int x, int y, int z) {
-        if (getLeaderboardEnabled()) {
-            leaderboard.hide(); // config still points at the OLD spot, so its chunk gets loaded and cleaned
-        }
-
-        getConfig().set(ConfigKey.LEADERBOARD_X.getPath(), x);
-        getConfig().set(ConfigKey.LEADERBOARD_Y.getPath(), y);
-        getConfig().set(ConfigKey.LEADERBOARD_Z.getPath(), z);
-        saveConfig();
-
-        leaderboard.refresh();
+    public Leaderboard getKillsLeaderboard() {
+        return killsLeaderboard;
     }
 
     // players / lives
@@ -383,19 +338,7 @@ public final class VowSMPPlugin extends JavaPlugin {
     }
 
     public Map<UUID, Integer> getPlayerLives() {
-        Map<UUID, Integer> result = new LinkedHashMap<>();
-        var section = getConfig().getConfigurationSection(ConfigKey.PLAYER_LIVES.getPath());
-        if (section == null) {
-            return result;
-        }
-        for (String key : section.getKeys(false)) {
-            try {
-                result.put(UUID.fromString(key), section.getInt(key));
-            } catch (IllegalArgumentException e) {
-                getLogger().warning("Ignoring invalid UUID in player-lives: " + key);
-            }
-        }
-        return result;
+        return readUuidIntMap(ConfigKey.PLAYER_LIVES);
     }
 
     /// applies the change, clamped to 0<->MAX_LIVES, and returns the new life count.
@@ -415,6 +358,45 @@ public final class VowSMPPlugin extends JavaPlugin {
         }
 
         return updated;
+    }
+
+    // kills
+
+    public int getPlayerKills(UUID id) {
+        return getConfig().getInt(ConfigKey.PLAYER_KILLS.getPath() + "." + id, 0);
+    }
+
+    public Map<UUID, Integer> getPlayerKills() {
+        return readUuidIntMap(ConfigKey.PLAYER_KILLS);
+    }
+
+    /// sets a player's kill count (never below 0) and updates the kills leaderboard.
+    /// returns the new count.
+    public int setPlayerKills(UUID id, int kills) {
+        int updated = Math.max(0, kills);
+        if (updated == getPlayerKills(id)) return updated;
+
+        // 0 kills = no entry, so they drop off the board and out of the file
+        getConfig().set(ConfigKey.PLAYER_KILLS.getPath() + "." + id, updated == 0 ? null : updated);
+        saveConfig();
+        killsLeaderboard.refresh();
+        return updated;
+    }
+
+    private Map<UUID, Integer> readUuidIntMap(ConfigKey key) {
+        Map<UUID, Integer> result = new LinkedHashMap<>();
+        var section = getConfig().getConfigurationSection(key.getPath());
+        if (section == null) {
+            return result;
+        }
+        for (String k : section.getKeys(false)) {
+            try {
+                result.put(UUID.fromString(k), section.getInt(k));
+            } catch (IllegalArgumentException e) {
+                getLogger().warning("Ignoring invalid UUID in " + key.getPath() + ": " + k);
+            }
+        }
+        return result;
     }
 
     private List<UUID> readUuidList(ConfigKey key) {

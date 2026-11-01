@@ -1,4 +1,6 @@
 leaderboard-enabled: false
+# player kills are only counted while this is on
+kills-leaderboard-enabled: false
 
 update-repo: "halleyscommet/vow"
 
@@ -12,6 +14,8 @@ resource-pack:
 logged-players: []
 killed-players: []
 player-lives: {}
+# uuid -> player kills counted while the kills leaderboard was on
+player-kills: {}
 player-vows: {}
 # guru uuid -> uuids of players his smite never targets (/vow trust)
 guru-trusted: {}

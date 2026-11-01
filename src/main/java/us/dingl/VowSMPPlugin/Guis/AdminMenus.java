@@ -13,6 +13,7 @@ import org.bukkit.SoundCategory;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import us.dingl.VowSMPPlugin.Leaderboard.Leaderboard;
 import us.dingl.VowSMPPlugin.Listeners.ResourcePackListener;
 import us.dingl.VowSMPPlugin.Listeners.ResourcePackListener.Pack;
 import us.dingl.VowSMPPlugin.Listeners.ResourcePackListener.Source;
@@ -108,7 +109,7 @@ public final class AdminMenus {
                 .title("Vow Admin")
                 .pattern(
                         "#########",
-                        "#PVM#LSR#",
+                        "PVM#LK#SR",
                         "########U")
                 .bind('#', filler())
                 .bind('P', Button.of(item(Material.PLAYER_HEAD, "<gold><b>Players",
@@ -117,34 +118,9 @@ public final class AdminMenus {
                         "<gray>Every vow and who has it"), ctx -> navigate(ctx, vows)))
                 .bind('M', Button.of(item(Material.NETHER_STAR, "<yellow><b>Mythics",
                         "<gray>Who holds each mythic"), ctx -> navigate(ctx, mythics)))
-                .bind('L', Button.builder()
-                        .item(ctx -> {
-                            boolean enabled = plugin.getLeaderboardEnabled();
-                            Location pos = plugin.getLeaderboardLocation();
-                            String coords = pos == null ? "unknown"
-                                    : pos.getBlockX() + " " + pos.getBlockY() + " " + pos.getBlockZ();
-                            return item(Material.OAK_SIGN,
-                                    enabled ? "<gold><b>Leaderboard: <green>On" : "<gold><b>Leaderboard: <red>Off",
-                                    "<gray>At " + coords,
-                                    "",
-                                    "<gray>Left click: <white>turn " + (enabled ? "off" : "on"),
-                                    "<gray>Right click: <white>move above the block",
-                                    "<gray>you're looking at");
-                        })
-                        .on(ClickKind.LEFT, ctx -> {
-                            (plugin.toggleLeaderboard() ? UiSound.ON : UiSound.OFF).play(ctx.player());
-                            ctx.refresh();
-                        })
-                        .on(ClickKind.RIGHT, ctx -> {
-                            Player viewer = ctx.player();
-                            Block target = viewer.getTargetBlockExact(5);
-                            Location location = target != null ? target.getLocation() : viewer.getLocation();
-                            // +1 so the board floats above the block
-                            plugin.setLeaderboardPosition(location.getBlockX(), location.getBlockY() + 1, location.getBlockZ());
-                            UiSound.SUCCESS.play(viewer);
-                            ctx.refresh();
-                        })
-                        .build())
+                .bind('L', leaderboardButton(plugin.getLeaderboard(), "Immortals Board", Material.OAK_SIGN))
+                .bind('K', leaderboardButton(plugin.getKillsLeaderboard(), "Kills Board", Material.IRON_SWORD,
+                        "<gray>Kills only count while it's on"))
                 .bind('S', Button.builder()
                         .item(ctx -> plugin.getStorm().isActive()
                                 ? item(Material.LIGHTNING_ROD, "<dark_red><b>Stop Storm")
@@ -223,7 +199,7 @@ public final class AdminMenus {
                 .updateInterval(REFRESH_TICKS)
                 .pattern(
                         "#########",
-                        "#H#L#V#I#",
+                        "H#L#V#I#K",
                         "B########")
                 .bind('#', filler())
                 .bind('B', backButton())
@@ -254,7 +230,28 @@ public final class AdminMenus {
                             ctx.refresh();
                         })
                         .build())
+                .bind('K', Button.builder()
+                        .item(ctx -> item(Material.IRON_SWORD, "<gold><b>Kills: " + plugin.getPlayerKills(target(ctx)),
+                                "<gray>Left click: <green>+1", "<gray>Right click: <red>-1",
+                                "<gray>Shift right click: <red>reset"))
+                        .on(ClickKind.LEFT, ctx -> changeKills(ctx, target(ctx), 1))
+                        .on(ClickKind.RIGHT, ctx -> changeKills(ctx, target(ctx), -1))
+                        .on(ClickKind.SHIFT_RIGHT, ctx -> {
+                            plugin.setPlayerKills(target(ctx), 0);
+                            UiSound.REMOVE.play(ctx.player());
+                            ctx.refresh();
+                        })
+                        .build())
                 .build();
+    }
+
+    private void changeKills(ClickContext ctx, UUID id, int change) {
+        int before = plugin.getPlayerKills(id);
+        int after = plugin.setPlayerKills(id, before + change);
+        // already at 0
+        UiSound sound = after == before ? UiSound.ERROR : change > 0 ? UiSound.UP : UiSound.DOWN;
+        sound.play(ctx.player());
+        ctx.refresh();
     }
 
     private Menu buildLives() {
@@ -417,6 +414,40 @@ public final class AdminMenus {
 
     // shared pieces
 
+    /// left click turns the board on/off, right click moves it above the block the viewer is looking at
+    private Button leaderboardButton(Leaderboard board, String label, Material icon, String... extraLore) {
+        return Button.builder()
+                .item(ctx -> {
+                    boolean enabled = board.isEnabled();
+                    Location pos = board.getLocation();
+                    String coords = pos == null ? "unknown"
+                            : pos.getBlockX() + " " + pos.getBlockY() + " " + pos.getBlockZ();
+                    List<String> lore = new ArrayList<>();
+                    lore.add("<gray>At " + coords);
+                    lore.addAll(Arrays.asList(extraLore));
+                    lore.add("");
+                    lore.add("<gray>Left click: <white>turn " + (enabled ? "off" : "on"));
+                    lore.add("<gray>Right click: <white>move above the block");
+                    lore.add("<gray>you're looking at");
+                    return item(icon, "<gold><b>" + label + ": " + (enabled ? "<green>On" : "<red>Off"),
+                            lore.toArray(String[]::new));
+                })
+                .on(ClickKind.LEFT, ctx -> {
+                    (board.toggle() ? UiSound.ON : UiSound.OFF).play(ctx.player());
+                    ctx.refresh();
+                })
+                .on(ClickKind.RIGHT, ctx -> {
+                    Player viewer = ctx.player();
+                    Block target = viewer.getTargetBlockExact(5);
+                    Location location = target != null ? target.getLocation() : viewer.getLocation();
+                    // +1 so the board floats above the block
+                    board.setPosition(location.getBlockX(), location.getBlockY() + 1, location.getBlockZ());
+                    UiSound.SUCCESS.play(viewer);
+                    ctx.refresh();
+                })
+                .build();
+    }
+
     /// 6 rows: the list fills the top 5, the bottom row has page arrows and a back button
     private Menu listMenu(String id, String title, Pagination pagination) {
         String page = pagination.id();
@@ -484,6 +515,7 @@ public final class AdminMenus {
         lore.add(text("<green>Lives: " + plugin.getPlayerLives(id) + "/" + VowSMPPlugin.MAX_LIVES));
         lore.add(text("<gray>Vow: <white>" + (vow == null ? "none" : vow.name())));
         lore.add(text(isImmortal(id) ? "<gold>Immortal" : "<dark_gray>Has died"));
+        lore.add(text("<gray>Kills: <white>" + plugin.getPlayerKills(id)));
         if (extraLore.length > 0) {
             lore.add(Component.empty());
             for (String line : extraLore) lore.add(text(line));

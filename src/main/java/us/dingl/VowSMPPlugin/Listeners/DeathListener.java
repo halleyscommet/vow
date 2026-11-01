@@ -27,11 +27,17 @@ public class DeathListener implements Listener {
         UUID id = player.getUniqueId();
         Player killer = player.getKiller();
 
-        if (plugin.getLeaderboardEnabled()) {
+        if (plugin.getLeaderboard().isEnabled()) {
             if (plugin.addPlayerToKilled(id)) {
                 Bukkit.broadcast(Component.text(player.getName() + " has died for the first time! o7",
                         NamedTextColor.RED, TextDecoration.BOLD));
             }
+        }
+
+        // any player kill counts, even the same victim again
+        if (killer != null && !killer.equals(player) && plugin.getKillsLeaderboard().isEnabled()) {
+            UUID killerId = killer.getUniqueId();
+            plugin.setPlayerKills(killerId, plugin.getPlayerKills(killerId) + 1);
         }
 
         int before = plugin.getPlayerLives(id);
