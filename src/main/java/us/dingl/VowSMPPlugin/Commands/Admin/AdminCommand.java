@@ -25,6 +25,7 @@ public class AdminCommand implements SubCommand {
                 new LivesAdminCommand(plugin),
                 new VowsAdminCommand(plugin),
                 new MythicAdminCommand(plugin),
+                new ItemAdminCommand(plugin),
                 new LeaderboardAdminCommand(plugin),
                 new KillsAdminCommand(plugin),
                 new PackAdminCommand(plugin),

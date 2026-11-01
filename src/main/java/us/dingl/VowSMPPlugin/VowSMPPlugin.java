@@ -42,6 +42,9 @@ import us.dingl.VowSMPPlugin.Vows.Impl.KarmaVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.TwoLifeDeathVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.WhimplyVow;
 import us.dingl.VowSMPPlugin.Vows.VowManager;
+import us.dingl.VowSMPPlugin.Items.Abilities.AbilityManager;
+import us.dingl.VowSMPPlugin.Items.Abilities.Impl.CooldownAbility;
+import us.dingl.VowSMPPlugin.Items.Abilities.Impl.InfiniteUseAbility;
 import us.dingl.paperGUI.api.PaperGUIApi;
 import us.dingl.paperGUI.builtin.Builtins;
 import us.dingl.paperGUI.internal.GuiManager;
@@ -69,6 +72,7 @@ public final class VowSMPPlugin extends JavaPlugin {
     private Storm storm;
     private VowManager vowManager;
     private MythicManager mythicManager;
+    private AbilityManager abilityManager;
     private Updater updater;
     private ResourcePackListener resourcePackListener;
 
@@ -102,6 +106,9 @@ public final class VowSMPPlugin extends JavaPlugin {
 
         mythicManager = new MythicManager(this);
         mythicManager.start();
+
+        abilityManager = new AbilityManager(this);
+        registerAbilities();
 
         updater = new Updater(this, getFile());
 
@@ -212,6 +219,10 @@ public final class VowSMPPlugin extends JavaPlugin {
 
     public MythicManager getMythicManager() {
         return mythicManager;
+    }
+
+    public AbilityManager getAbilityManager() {
+        return abilityManager;
     }
 
     public VowManager getVowManager() {
@@ -432,6 +443,13 @@ public final class VowSMPPlugin extends JavaPlugin {
         vowManager.register(new HazelVow(this));
         vowManager.register(new TwoLifeDeathVow(this));
         // new vows go here
+    }
+
+    /// abilities admins can put on items in the item builder
+    private void registerAbilities() {
+        abilityManager.register(new InfiniteUseAbility(this));
+        abilityManager.register(new CooldownAbility(this));
+        // new abilities go here
     }
 
     private void registerCommands() {

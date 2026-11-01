@@ -56,7 +56,7 @@ public final class AdminMenus {
     private static final String LIST_PATTERN_BOTTOM = "<###B###>";
 
     /// feedback sounds, played only to whoever clicked
-    private enum UiSound {
+    enum UiSound {
         CLICK(Sound.UI_BUTTON_CLICK, 1f),
         PAGE(Sound.ITEM_BOOK_PAGE_TURN, 1f),
         ON(Sound.BLOCK_NOTE_BLOCK_PLING, 2f),
@@ -88,6 +88,7 @@ public final class AdminMenus {
     private final Menu vowPicker;
     private final Menu vows;
     private final Menu mythics;
+    private final ItemBuilderMenus itemBuilder;
 
     public AdminMenus(VowSMPPlugin plugin) {
         this.plugin = plugin;
@@ -97,11 +98,17 @@ public final class AdminMenus {
         this.players = buildPlayers();
         this.vows = buildVows();
         this.mythics = buildMythics();
+        this.itemBuilder = new ItemBuilderMenus(plugin, this);
         this.main = buildMain();
     }
 
     public void openMain(Player viewer) {
         main.open(viewer);
+    }
+
+    /// edits the item in their hand
+    public void openItemBuilder(Player viewer) {
+        itemBuilder.open(viewer);
     }
 
     // main panel
@@ -112,7 +119,7 @@ public final class AdminMenus {
                 .title("Vow Admin")
                 .pattern(
                         "#########",
-                        "PVM#LK#SR",
+                        "PVMILK#SR",
                         "########U")
                 .bind('#', filler())
                 .bind('P', Button.of(item(Material.PLAYER_HEAD, "<gold><b>Players",
@@ -121,6 +128,13 @@ public final class AdminMenus {
                         "<gray>Every vow and who has it"), ctx -> navigate(ctx, vows)))
                 .bind('M', Button.of(item(Material.NETHER_STAR, "<yellow><b>Mythics",
                         "<gray>Who holds each mythic"), ctx -> navigate(ctx, mythics)))
+                .bind('I', Button.of(item(Material.ANVIL, "<aqua><b>Item Builder",
+                        "<gray>Edit the item in your hand:", "<gray>name, lore, enchantments,",
+                        "<gray>abilities, and make it mythic"), ctx -> {
+                    UiSound.CLICK.play(ctx.player());
+                    ctx.close();
+                    itemBuilder.open(ctx.player());
+                }))
                 .bind('L', leaderboardButton(plugin.getLeaderboard(), "Immortals Board", Material.OAK_SIGN))
                 .bind('K', leaderboardButton(plugin.getKillsLeaderboard(), "Kills Board", Material.IRON_SWORD,
                         "<gray>Kills only count while it's on"))
@@ -511,7 +525,7 @@ public final class AdminMenus {
     }
 
     /// 6 rows: the list fills the top 5, the bottom row has page arrows and a back button
-    private Menu listMenu(String id, String title, Pagination pagination) {
+    Menu listMenu(String id, String title, Pagination pagination) {
         String page = pagination.id();
         return Menu.builder(id)
                 .rows(6)
@@ -558,7 +572,7 @@ public final class AdminMenus {
         });
     }
 
-    private static Button filler() {
+    static Button filler() {
         ItemStack filler = ui("blank_slot", new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
         filler.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().hideTooltip(true).build());
         return Button.of(filler);
@@ -566,7 +580,7 @@ public final class AdminMenus {
 
     /// swaps the item's look for one of the pack's slot-sized UI textures (resourcepack/assets/vow/items).
     /// The real item stays underneath, so it still makes sense if the pack didn't load.
-    private static ItemStack ui(String model, ItemStack item) {
+    static ItemStack ui(String model, ItemStack item) {
         item.editMeta(meta -> meta.setItemModel(new NamespacedKey("vow", model)));
         return item;
     }
@@ -614,7 +628,7 @@ public final class AdminMenus {
         return (UUID) ctx.session().var(TARGET);
     }
 
-    private static ItemStack item(Material material, String name, String... lore) {
+    static ItemStack item(Material material, String name, String... lore) {
         ItemStack item = new ItemStack(material);
         item.editMeta(meta -> {
             meta.displayName(text(name));
@@ -624,13 +638,13 @@ public final class AdminMenus {
     }
 
     /// MiniMessage with italics off, since item names and lore default to italic
-    private static Component text(String miniMessage) {
+    static Component text(String miniMessage) {
         return MiniMessage.miniMessage().deserialize(miniMessage)
                 .decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
     }
 
     /// lore doesn't wrap on its own, so long descriptions would run off the screen
-    private static List<String> wrap(String text) {
+    static List<String> wrap(String text) {
         List<String> lines = new ArrayList<>();
         StringBuilder current = new StringBuilder();
         for (String word : text.split(" ")) {

@@ -19,6 +19,7 @@ public enum ConfigKey {
     EXTRA_VOW_LIVES("extra-vow-lives"),
     GURU_TRUSTED("guru-trusted"),
     MYTHICS("mythics"),
+    ITEM_COOLDOWNS("item-cooldowns"),
     MYTHIC_BROADCAST("mythic-transfer.broadcast"),
     MYTHIC_SOUND("mythic-transfer.sound"),
     UPDATE_REPO("update-repo"),

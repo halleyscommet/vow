@@ -223,6 +223,11 @@ public class MythicManager {
         }
     }
 
+    /// gives the item the "✦ Mythic" lore line if it's missing. Edits the stack in place.
+    public void mark(ItemStack item) {
+        addMarker(item);
+    }
+
     /// true if the item didn't have it yet
     private boolean addMarker(ItemStack item) {
         List<Component> lore = item.lore();
@@ -245,7 +250,8 @@ public class MythicManager {
         return true;
     }
 
-    private static boolean isMarker(Component line) {
+    /// true if this lore line is the "✦ Mythic" marker
+    public static boolean isMarker(Component line) {
         return PlainTextComponentSerializer.plainText().serialize(line).equals(MARKER_TEXT);
     }
 
