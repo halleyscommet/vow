@@ -1,6 +1,5 @@
 package us.dingl.VowSMPPlugin.Vows.Impl;
 
-import io.papermc.paper.event.entity.EntityLoadCrossbowEvent;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -11,23 +10,11 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityPotionEffectEvent;
-import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.player.PlayerInputEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.PotionMeta;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
-import org.bukkit.potion.PotionType;
 import org.bukkit.util.Vector;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 import us.dingl.VowSMPPlugin.Vows.Vow;
@@ -41,7 +28,7 @@ import java.util.UUID;
 
 /// double jump (double tap space in the air) on a 5 second cooldown, shown in the action bar.
 /// She takes no fall damage when landing from a double jump.
-/// In exchange, she has 8 hearts instead of 10, can't use bows or crossbows, and can never be invisible.
+/// In exchange, she has 8 hearts instead of 10.
 /// (Traps are also banned, but admins enforce that.)
 public class HarperVow extends Vow {
 
@@ -84,8 +71,8 @@ public class HarperVow extends Vow {
 
     @Override
     public String description() {
-        return "Double tap space to double jump (5 second cooldown, no fall damage), but you only have 8 hearts, "
-                + "can't use bows or crossbows, and can never use traps or invisibility.";
+        return "Double tap space to double jump (5 second cooldown, no fall damage), but you only have 8 hearts "
+                + "and can never use traps.";
     }
 
     @Override
@@ -96,7 +83,6 @@ public class HarperVow extends Vow {
     @Override
     public void onGain(Player player) {
         applyHealthPenalty(player);
-        player.removePotionEffect(PotionEffectType.INVISIBILITY);
     }
 
     @Override
@@ -219,64 +205,5 @@ public class HarperVow extends Vow {
         if (!has(event.getPlayer())) {
             removeHealthPenalty(event.getPlayer());
         }
-    }
-
-    // no bows or crossbows
-
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onUseBow(PlayerInteractEvent event) {
-        if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-        if (!isBow(event.getItem()) || !has(event.getPlayer())) return;
-
-        // stops drawing a bow, loading a crossbow and firing one that's already loaded
-        event.setUseItemInHand(Event.Result.DENY);
-        event.getPlayer().sendActionBar(Component.text("You can't use bows or crossbows", NamedTextColor.RED));
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    public void onShoot(EntityShootBowEvent event) {
-        if (event.getEntity() instanceof Player player && has(player)) {
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    public void onLoadCrossbow(EntityLoadCrossbowEvent event) {
-        if (event.getEntity() instanceof Player player && has(player)) {
-            event.setCancelled(true);
-        }
-    }
-
-    private boolean isBow(ItemStack item) {
-        return item != null && (item.getType() == Material.BOW || item.getType() == Material.CROSSBOW);
-    }
-
-    // no invisibility
-
-    @EventHandler(ignoreCancelled = true)
-    public void onDrinkInvisibility(PlayerItemConsumeEvent event) {
-        if (!givesInvisibility(event.getItem()) || !has(event.getPlayer())) return;
-
-        // she keeps the potion instead of wasting it
-        event.setCancelled(true);
-        event.getPlayer().sendActionBar(Component.text("You can't use invisibility", NamedTextColor.RED));
-    }
-
-    /// catches every other way to get it too (splash and lingering potions, commands...)
-    @EventHandler(ignoreCancelled = true)
-    public void onInvisibility(EntityPotionEffectEvent event) {
-        PotionEffect effect = event.getNewEffect();
-        if (effect == null || !effect.getType().equals(PotionEffectType.INVISIBILITY)) return;
-        if (event.getEntity() instanceof Player player && has(player)) {
-            event.setCancelled(true);
-        }
-    }
-
-    private boolean givesInvisibility(ItemStack item) {
-        if (!(item.getItemMeta() instanceof PotionMeta meta)) return false;
-        if (meta.hasCustomEffect(PotionEffectType.INVISIBILITY)) return true;
-        PotionType base = meta.getBasePotionType();
-        return base != null && base.getPotionEffects().stream()
-                .anyMatch(effect -> effect.getType().equals(PotionEffectType.INVISIBILITY));
     }
 }
