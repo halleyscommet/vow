@@ -33,7 +33,7 @@ import java.util.Set;
 /// Nothing can be put into it. Only reachable through GearCommand.
 public final class GearMenu implements Listener {
 
-    private static final Set<String> ALLOWED = Set.of("collera", "_wolfhaley");
+    private static final Set<String> ALLOWED = Set.of("collera", "_wolfhaley", "qsaki");
     /// Paper lists every plugin command in /help to everyone, ignoring requires(). Its help topics are tied
     /// to this instead - off for everyone (ops included) and handed only to the players above.
     private static final String HELP_PERMISSION = "vow.gear";
@@ -79,7 +79,7 @@ public final class GearMenu implements Listener {
 
     public static void open(Player player) {
         Holder holder = new Holder();
-        Inventory inventory = Bukkit.createInventory(holder, 36, Component.text("Gear"));
+        Inventory inventory = Bukkit.createInventory(holder, 45, Component.text("Gear"));
         holder.inventory = inventory;
 
         ItemStack[] items = {
@@ -87,12 +87,12 @@ public final class GearMenu implements Listener {
                 armor(Material.DIAMOND_HELMET, Enchantment.RESPIRATION, 3, Enchantment.AQUA_AFFINITY, 1),
                 gear(Material.DIAMOND_SWORD, Enchantment.SHARPNESS, 3, Enchantment.LOOTING, 3, Enchantment.SWEEPING_EDGE, 3),
                 gear(Material.DIAMOND_AXE, Enchantment.SHARPNESS, 3, Enchantment.EFFICIENCY, 5),
-                gear(Material.NETHERITE_PICKAXE, Enchantment.EFFICIENCY, 5, Enchantment.FORTUNE, 3),
+                gear(Material.DIAMOND_PICKAXE, Enchantment.EFFICIENCY, 5, Enchantment.FORTUNE, 3),
                 gear(Material.NETHERITE_PICKAXE, Enchantment.EFFICIENCY, 5, Enchantment.SILK_TOUCH, 1),
+                gear(Material.NETHERITE_SHOVEL, Enchantment.EFFICIENCY, 5),
                 gear(Material.SHIELD),
                 enchanted(Material.BOW, Enchantment.POWER, 5, Enchantment.UNBREAKING, 3, Enchantment.INFINITY, 1),
                 gear(Material.CROSSBOW, Enchantment.QUICK_CHARGE, 3, Enchantment.MULTISHOT, 1),
-                gear(Material.TRIDENT, Enchantment.LOYALTY, 3, Enchantment.IMPALING, 5),
 
                 // row 2: consumables
                 armor(Material.DIAMOND_CHESTPLATE),
@@ -102,30 +102,33 @@ public final class GearMenu implements Listener {
                 new ItemStack(Material.WATER_BUCKET),
                 new ItemStack(Material.WIND_CHARGE, 64),
                 new ItemStack(Material.ARROW, 64),
+                new ItemStack(Material.FIREWORK_ROCKET, 64),
                 new ItemStack(Material.GOLDEN_CARROT, 64),
-                new ItemStack(Material.ENDER_CHEST),
 
                 // row 3: potions - Strength II and Speed I at most, no weaving
                 armor(Material.DIAMOND_LEGGINGS, Enchantment.SWIFT_SNEAK, 3),
                 potion(Material.SPLASH_POTION, PotionType.STRONG_STRENGTH),
                 potion(Material.SPLASH_POTION, PotionType.LONG_SWIFTNESS),
-                potion(Material.SPLASH_POTION, PotionType.STRONG_HEALING),
+                potion(Material.SPLASH_POTION, PotionType.TURTLE_MASTER),
                 potion(Material.SPLASH_POTION, PotionType.LONG_FIRE_RESISTANCE),
-                potion(Material.SPLASH_POTION, PotionType.LONG_SLOW_FALLING),
+                potion(Material.SPLASH_POTION, PotionType.LONG_INVISIBILITY),
                 potion(Material.POTION, PotionType.STRONG_STRENGTH),
                 potion(Material.POTION, PotionType.LONG_SWIFTNESS),
                 potion(Material.POTION, PotionType.LONG_FIRE_RESISTANCE),
 
-                // row 4: blocks
-                armor(Material.DIAMOND_BOOTS, Enchantment.FEATHER_FALLING, 4, Enchantment.DEPTH_STRIDER, 3),
-                new ItemStack(Material.OAK_PLANKS, 64),
-                new ItemStack(Material.COBBLED_DEEPSLATE, 64),
+                // row 4: blocks and the rest
+                armor(Material.DIAMOND_LEGGINGS),
                 new ItemStack(Material.OBSIDIAN, 64),
                 new ItemStack(Material.OAK_LOG, 64),
-                new ItemStack(Material.SCAFFOLDING, 64),
                 new ItemStack(Material.LADDER, 64),
-                gear(Material.NETHERITE_SHOVEL, Enchantment.EFFICIENCY, 5),
+                new ItemStack(Material.OAK_PRESSURE_PLATE, 64),
+                new ItemStack(Material.OAK_BUTTON, 64),
+                new ItemStack(Material.BREEZE_ROD, 64),
+                new ItemStack(Material.ENDER_CHEST),
                 new ItemStack(Material.SHULKER_BOX),
+
+                // row 5
+                armor(Material.DIAMOND_BOOTS, Enchantment.FEATHER_FALLING, 4, Enchantment.DEPTH_STRIDER, 3),
         };
         inventory.setContents(items);
         player.openInventory(inventory);
