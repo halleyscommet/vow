@@ -42,6 +42,9 @@ public abstract class Vow implements Listener {
     /// give potion effects a slightly longer duration than a second so they don't blink off.
     public void tick(Player player, int lives) {}
 
+    /// the plugin is disabling - undo anything that would otherwise outlive it (like temporary attribute changes)
+    public void shutdown() {}
+
     /// the player just finished a resurrection ritual (after they got their lives back)
     public void onRitualComplete(Player player) {}
 

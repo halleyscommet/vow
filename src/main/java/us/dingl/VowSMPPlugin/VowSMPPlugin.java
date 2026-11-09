@@ -6,14 +6,18 @@ import org.bukkit.*;
 import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
+import us.dingl.VowSMPPlugin.Commands.GearCommand;
 import us.dingl.VowSMPPlugin.Commands.LivesCommand;
 import us.dingl.VowSMPPlugin.Commands.Vow.MythicsSubCommand;
-import us.dingl.VowSMPPlugin.Commands.Vow.ResistanceSubCommand;
+import us.dingl.VowSMPPlugin.Commands.Vow.BlinkSubCommand;
+import us.dingl.VowSMPPlugin.Commands.Vow.StunSubCommand;
 import us.dingl.VowSMPPlugin.Commands.Vow.VowCommand;
 import us.dingl.VowSMPPlugin.Commands.WithdrawCommand;
 import us.dingl.VowSMPPlugin.Guis.AdminMenus;
+import us.dingl.VowSMPPlugin.Guis.GearMenu;
 import us.dingl.VowSMPPlugin.Guis.HeadCache;
 import us.dingl.VowSMPPlugin.Guis.LivesActionBar;
 import us.dingl.VowSMPPlugin.Items.LifeItem;
@@ -38,9 +42,11 @@ import us.dingl.VowSMPPlugin.Vows.Impl.HaleyVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.HarperVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.HazelVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.IceVow;
+import us.dingl.VowSMPPlugin.Vows.Impl.JaxVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.KarmaVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.TwoLifeDeathVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.WhimplyVow;
+import us.dingl.VowSMPPlugin.Vows.TurtleMasterBan;
 import us.dingl.VowSMPPlugin.Vows.VowManager;
 import us.dingl.VowSMPPlugin.Items.Abilities.AbilityManager;
 import us.dingl.VowSMPPlugin.Items.Abilities.Impl.CooldownAbility;
@@ -142,6 +148,12 @@ public final class VowSMPPlugin extends JavaPlugin {
         curtanaRecipe.setIngredient('W', Material.WAXED_WEATHERED_CUT_COPPER_STAIRS);
 
         getServer().addRecipe(curtanaRecipe);
+
+        // a heavy core breaks back down into breeze rods
+        ShapelessRecipe breezeRodRecipe = new ShapelessRecipe(new NamespacedKey(this, "heavy_core_to_breeze_rods"),
+                new ItemStack(Material.BREEZE_ROD, 32));
+        breezeRodRecipe.addIngredient(Material.HEAVY_CORE);
+        getServer().addRecipe(breezeRodRecipe);
 
         // make altar if it doesn't exist
         new Altar(this).spawn();
@@ -442,6 +454,7 @@ public final class VowSMPPlugin extends JavaPlugin {
         vowManager.register(new WhimplyVow(this));
         vowManager.register(new HazelVow(this));
         vowManager.register(new TwoLifeDeathVow(this));
+        vowManager.register(new JaxVow(this));
         // new vows go here
     }
 
@@ -458,8 +471,10 @@ public final class VowSMPPlugin extends JavaPlugin {
             registrar.register(new VowCommand(this).build(), "Vow SMP commands");
             registrar.register(new WithdrawCommand(this).build().build(), "Withdraw lives as items");
             registrar.register(new LivesCommand(this).build().build(), "Get lives or show an actionbar");
-            registrar.register(new ResistanceSubCommand(this).build().build(), "Use the Karma vow's resistance");
+            registrar.register(new BlinkSubCommand(this).build().build(), "Use the Karma vow's blink");
+            registrar.register(new StunSubCommand(this).build().build(), "Use the Jax vow's stun");
             registrar.register(new MythicsSubCommand(this).build().build(), "See who holds each mythic item");
+            registrar.register(new GearCommand().build().build());
         });
     }
 
@@ -472,7 +487,9 @@ public final class VowSMPPlugin extends JavaPlugin {
                 new StormConfinementListener(this, storm),
                 new ClaimLifeListener(this),
                 //new CombatLogListener(),
-                new AltarClickListener(this)
+                new AltarClickListener(this),
+                new TurtleMasterBan(this),
+                new GearMenu(this)
         );
     }
 

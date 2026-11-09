@@ -18,6 +18,7 @@ public enum ConfigKey {
     PLAYER_VOWS("player-vows"),
     EXTRA_VOW_LIVES("extra-vow-lives"),
     GURU_TRUSTED("guru-trusted"),
+    JAX_TRUSTED("jax-trusted"),
     MYTHICS("mythics"),
     ITEM_COOLDOWNS("item-cooldowns"),
     MYTHIC_BROADCAST("mythic-transfer.broadcast"),

@@ -9,28 +9,28 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import us.dingl.VowSMPPlugin.Permissions;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
-import us.dingl.VowSMPPlugin.Vows.Impl.KarmaVow;
+import us.dingl.VowSMPPlugin.Vows.Impl.JaxVow;
 
-/// /res - the Karma vow's Resistance V. Registered both as its own command and as a /vow subcommand.
-public class ResistanceSubCommand implements SubCommand {
+/// /stun - the Jax vow's stun. Registered both as its own command and as a /vow subcommand.
+public class StunSubCommand implements SubCommand {
 
     private final VowSMPPlugin plugin;
 
-    public ResistanceSubCommand(VowSMPPlugin plugin) {
+    public StunSubCommand(VowSMPPlugin plugin) {
         this.plugin = plugin;
     }
 
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
-        return Commands.literal("res")
-                .requires(CommandUtil.vowHolder(plugin, KarmaVow.class, Permissions.RESISTANCE))
+        return Commands.literal("stun")
+                .requires(CommandUtil.vowHolder(plugin, JaxVow.class, Permissions.STUN))
                 .executes(ctx -> {
                     Player player = CommandUtil.requirePlayer(ctx);
-                    if (!(plugin.getVowManager().getVow(player.getUniqueId(), KarmaVow.class) instanceof KarmaVow karma)) {
-                        player.sendMessage(Component.text("Only the Karma vow can use this.", NamedTextColor.RED));
+                    if (!(plugin.getVowManager().getVow(player.getUniqueId(), JaxVow.class) instanceof JaxVow jax)) {
+                        player.sendMessage(Component.text("Only the Jax vow can use this.", NamedTextColor.RED));
                         return 0;
                     }
-                    return karma.activate(player) ? Command.SINGLE_SUCCESS : 0;
+                    return jax.activate(player) ? Command.SINGLE_SUCCESS : 0;
                 });
     }
 }

@@ -53,6 +53,7 @@ public class VowManager implements Listener {
         if (tickTask != null) {
             tickTask.cancel();
         }
+        vows.values().forEach(Vow::shutdown);
     }
 
     public Collection<Vow> getVows() {
