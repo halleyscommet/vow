@@ -51,7 +51,7 @@ public class JaxVow extends Vow implements TrustingVow, TurtleMasterBan.Banned {
     /// how far off his crosshair a player can be and still get stunned
     private static final double AIM_TOLERANCE = 0.75;
     private static final int STUN_TICKS = 20;
-    private static final int COOLDOWN_TICKS = 60 * 20;
+    private static final int COOLDOWN_TICKS = 120 * 20;
     /// how often the action bar checks for a new target or countdown
     private static final long DISPLAY_TICKS = 2L;
     /// how far (squared) a stunned player can drift before they're put back
@@ -116,6 +116,11 @@ public class JaxVow extends Vow implements TrustingVow, TurtleMasterBan.Banned {
     @Override
     public Material icon() {
         return Material.COBWEB;
+    }
+
+    @Override
+    public int livesLostOnDeath(Player player, int livesBefore, int lost) {
+        return 2;
     }
 
     @Override
