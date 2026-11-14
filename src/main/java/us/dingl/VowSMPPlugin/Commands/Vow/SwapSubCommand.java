@@ -9,9 +9,9 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import us.dingl.VowSMPPlugin.Permissions;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
-import us.dingl.VowSMPPlugin.Vows.Impl.WhimplyVow;
+import us.dingl.VowSMPPlugin.Vows.Impl.Whimply2Vow;
 
-/// /swap - the Whimply vow's position swap. Registered both as its own command and as a /vow subcommand.
+/// /swap - the Whimply 2 vow's position swap. Registered both as its own command and as a /vow subcommand.
 public class SwapSubCommand implements SubCommand {
 
     private final VowSMPPlugin plugin;
@@ -23,11 +23,11 @@ public class SwapSubCommand implements SubCommand {
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("swap")
-                .requires(CommandUtil.vowHolder(plugin, WhimplyVow.class, Permissions.SWAP))
+                .requires(CommandUtil.vowHolder(plugin, Whimply2Vow.class, Permissions.SWAP))
                 .executes(ctx -> {
                     Player player = CommandUtil.requirePlayer(ctx);
-                    if (!(plugin.getVowManager().getVow(player.getUniqueId(), WhimplyVow.class) instanceof WhimplyVow whimply)) {
-                        player.sendMessage(Component.text("Only the Whimply vow can use this.", NamedTextColor.RED));
+                    if (!(plugin.getVowManager().getVow(player.getUniqueId(), Whimply2Vow.class) instanceof Whimply2Vow whimply)) {
+                        player.sendMessage(Component.text("Only the Whimply 2 vow can use this.", NamedTextColor.RED));
                         return 0;
                     }
                     return whimply.activate(player) ? Command.SINGLE_SUCCESS : 0;

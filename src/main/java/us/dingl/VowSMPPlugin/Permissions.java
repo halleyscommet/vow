@@ -29,7 +29,7 @@ public final class Permissions {
         add(pm, BLINK, PermissionDefault.TRUE, "Use the Karma vow's blink");
         add(pm, TRUST, PermissionDefault.TRUE, "Pick who the Guru vow's smite and the Jax vow's stun ignore");
         add(pm, STUN, PermissionDefault.TRUE, "Use the Jax vow's stun");
-        add(pm, SWAP, PermissionDefault.TRUE, "Use the Whimply vow's swap");
+        add(pm, SWAP, PermissionDefault.TRUE, "Use the Whimply 2 vow's swap");
         add(pm, MYTHICS, PermissionDefault.TRUE, "See who holds each mythic item");
 
         add(pm, ADMIN, PermissionDefault.OP, "Use the admin panel and /vow admin commands");

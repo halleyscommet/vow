@@ -46,7 +46,9 @@ import us.dingl.VowSMPPlugin.Vows.Impl.IceVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.JaxVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.KarmaVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.TwoLifeDeathVow;
+import us.dingl.VowSMPPlugin.Vows.Impl.Whimply2Vow;
 import us.dingl.VowSMPPlugin.Vows.Impl.WhimplyVow;
+import us.dingl.VowSMPPlugin.Vows.Impl.Ice2Vow;
 import us.dingl.VowSMPPlugin.Vows.TurtleMasterBan;
 import us.dingl.VowSMPPlugin.Vows.VowManager;
 import us.dingl.VowSMPPlugin.Items.Abilities.AbilityManager;
@@ -456,6 +458,8 @@ public final class VowSMPPlugin extends JavaPlugin {
         vowManager.register(new HazelVow(this));
         vowManager.register(new TwoLifeDeathVow(this));
         vowManager.register(new JaxVow(this));
+        vowManager.register(new Whimply2Vow(this));
+        vowManager.register(new Ice2Vow(this));
         // new vows go here
     }
 
@@ -474,7 +478,7 @@ public final class VowSMPPlugin extends JavaPlugin {
             registrar.register(new LivesCommand(this).build().build(), "Get lives or show an actionbar");
             registrar.register(new BlinkSubCommand(this).build().build(), "Use the Karma vow's blink");
             registrar.register(new StunSubCommand(this).build().build(), "Use the Jax vow's stun");
-            registrar.register(new SwapSubCommand(this).build().build(), "Use the Whimply vow's swap");
+            registrar.register(new SwapSubCommand(this).build().build(), "Use the Whimply 2 vow's swap");
             registrar.register(new MythicsSubCommand(this).build().build(), "See who holds each mythic item");
             registrar.register(new GearCommand().build().build());
         });
