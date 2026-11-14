@@ -345,11 +345,18 @@ public final class ItemBuilderMenus {
         for (AbilitySetting setting : ability.settings()) {
             String stored = current != null && current.containsKey(setting.key())
                     ? current.get(setting.key()) : setting.defaultValue();
-            inputs.add(DialogInput.text(setting.key(), Component.text(setting.label() + " (" + setting.type().hint() + ")"))
-                    .initial(setting.type().display(stored))
-                    .maxLength(256)
-                    .width(300)
-                    .build());
+            TextDialogInput.Builder input = DialogInput.text(setting.key(),
+                            Component.text(setting.label() + " (" + setting.type().hint() + ")"))
+                    .maxLength(1024)
+                    .width(300);
+            if (setting.type() == AbilitySetting.Type.EFFECTS) {
+                // one per line is easier to read and edit than a long comma list
+                input.initial(setting.type().display(stored).replace(", ", "\n"))
+                        .multiline(TextDialogInput.MultilineOptions.create(16, 120));
+            } else {
+                input.initial(setting.type().display(stored));
+            }
+            inputs.add(input.build());
         }
 
         showDialog(player, ability.name(), List.of(DialogBody.plainMessage(Component.text(ability.description()))), inputs,

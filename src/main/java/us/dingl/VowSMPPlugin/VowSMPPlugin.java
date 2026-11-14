@@ -53,6 +53,7 @@ import us.dingl.VowSMPPlugin.Vows.TurtleMasterBan;
 import us.dingl.VowSMPPlugin.Vows.VowManager;
 import us.dingl.VowSMPPlugin.Items.Abilities.AbilityManager;
 import us.dingl.VowSMPPlugin.Items.Abilities.Impl.CooldownAbility;
+import us.dingl.VowSMPPlugin.Items.Abilities.Impl.HeldEffectsAbility;
 import us.dingl.VowSMPPlugin.Items.Abilities.Impl.InfiniteUseAbility;
 import us.dingl.paperGUI.api.PaperGUIApi;
 import us.dingl.paperGUI.builtin.Builtins;
@@ -467,6 +468,7 @@ public final class VowSMPPlugin extends JavaPlugin {
     private void registerAbilities() {
         abilityManager.register(new InfiniteUseAbility(this));
         abilityManager.register(new CooldownAbility(this));
+        abilityManager.register(new HeldEffectsAbility(this));
         // new abilities go here
     }
 
