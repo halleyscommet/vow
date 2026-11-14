@@ -14,6 +14,7 @@ public final class Permissions {
     public static final String BLINK = "vow.blink";
     public static final String TRUST = "vow.trust";
     public static final String STUN = "vow.stun";
+    public static final String SWAP = "vow.swap";
     public static final String MYTHICS = "vow.mythics";
 
     /// ops: /vow admin and everything under it
@@ -28,6 +29,7 @@ public final class Permissions {
         add(pm, BLINK, PermissionDefault.TRUE, "Use the Karma vow's blink");
         add(pm, TRUST, PermissionDefault.TRUE, "Pick who the Guru vow's smite and the Jax vow's stun ignore");
         add(pm, STUN, PermissionDefault.TRUE, "Use the Jax vow's stun");
+        add(pm, SWAP, PermissionDefault.TRUE, "Use the Whimply vow's swap");
         add(pm, MYTHICS, PermissionDefault.TRUE, "See who holds each mythic item");
 
         add(pm, ADMIN, PermissionDefault.OP, "Use the admin panel and /vow admin commands");

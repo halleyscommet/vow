@@ -3,6 +3,7 @@ package us.dingl.VowSMPPlugin.Vows.Impl;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -10,6 +11,7 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.World;
+import org.bukkit.block.BlockFace;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
@@ -18,6 +20,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.util.BoundingBox;
+import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 import us.dingl.VowSMPPlugin.Vows.TurtleMasterBan;
@@ -27,14 +30,19 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/// /blink teleports her 10 blocks the way she's looking (like /tp ^ ^ ^10) on a 20 second cooldown, with the
-/// ender pearl sound for everyone nearby. She stops short of anything solid in the way, so she can't end up inside a wall.
+/// /blink teleports her where she's looking, up to 10 blocks, on a 20 second cooldown, with the ender pearl
+/// sound for everyone nearby. A block under her crosshair takes priority (she lands on or against it); otherwise
+/// she goes the full 10 blocks, mid-air included. She never ends up inside a wall.
 /// In exchange, she has 8 hearts instead of 10 and can't use Turtle Master.
 public class KarmaVow extends Vow implements TurtleMasterBan.Banned {
 
     private static final double DISTANCE = 10.0;
     /// how finely the path is checked for walls - thinner than any block with a hitbox (panes are 0.125)
     private static final double STEP = 0.1;
+    /// how far off a block's face she lands, so she isn't touching it
+    private static final double GAP = 0.01;
+    /// nudges tried, in order, when the exact landing spot is blocked
+    private static final double[] FIT_OFFSETS = {0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, -0.25, -0.5, -0.75, -1.0};
     private static final double HEALTH_PENALTY = -4.0;
     private static final int COOLDOWN_TICKS = 20 * 20;
     /// how often the action bar counts down
@@ -64,7 +72,7 @@ public class KarmaVow extends Vow implements TurtleMasterBan.Banned {
 
     @Override
     public String description() {
-        return "Type /blink to teleport " + (int) DISTANCE + " blocks the way you're looking ("
+        return "Type /blink to teleport where you're looking, up to " + (int) DISTANCE + " blocks, even mid-air ("
                 + COOLDOWN_TICKS / 20 + " second cooldown), "
                 + "but you only have 8 hearts and can't use Turtle Master.";
     }
@@ -111,23 +119,13 @@ public class KarmaVow extends Vow implements TurtleMasterBan.Banned {
         }
 
         Location from = player.getLocation();
-        Vector direction = from.getDirection();
-        World world = player.getWorld();
-        BoundingBox box = player.getBoundingBox();
-
-        // walk the path and keep the furthest spot her whole hitbox fits
-        double reached = 0;
-        for (double d = STEP; d <= DISTANCE + 1e-9; d += STEP) {
-            double step = Math.min(d, DISTANCE);
-            if (world.hasCollisionsIn(box.clone().shift(direction.clone().multiply(step)))) break;
-            reached = step;
-        }
-        if (reached < 0.5) {
+        Location to = destination(player);
+        // a tiny hop (looking at her own feet) isn't worth the cooldown
+        if (to == null || to.distanceSquared(from) < 0.25) {
             player.sendActionBar(Component.text("No room to blink", NamedTextColor.RED));
             return false;
         }
 
-        Location to = from.clone().add(direction.multiply(reached));
         // teleports fail while riding something
         if (player.isInsideVehicle()) player.leaveVehicle();
         // as an ender pearl, so whatever blocks pearls (a Jax stun, the ritual storm) blocks this too
@@ -138,6 +136,65 @@ public class KarmaVow extends Vow implements TurtleMasterBan.Banned {
         readyAt.put(player.getUniqueId(), Bukkit.getCurrentTick() + COOLDOWN_TICKS);
         plugin.getLivesActionBar().update(player.getUniqueId());
         return true;
+    }
+
+    /// where /blink puts her feet, or null if there's nowhere to go. A block under her crosshair within range
+    /// wins - she lands on top of it, or right up against it if she's looking at its side or underside.
+    /// With nothing in range she goes the full distance, even into thin air.
+    private Location destination(Player player) {
+        Location from = player.getLocation();
+        Location eye = player.getEyeLocation();
+        Vector direction = eye.getDirection();
+        World world = player.getWorld();
+        double halfWidth = player.getWidth() / 2;
+
+        RayTraceResult hit = world.rayTraceBlocks(eye, direction, DISTANCE, FluidCollisionMode.NEVER, true);
+        Vector feet;
+        if (hit == null || hit.getHitBlockFace() == null) {
+            // nothing in the way: her eyes end up where the crosshair was 10 blocks out
+            feet = eye.toVector().add(direction.clone().multiply(DISTANCE)).subtract(new Vector(0, player.getEyeHeight(), 0));
+        } else {
+            Vector point = hit.getHitPosition();
+            BlockFace face = hit.getHitBlockFace();
+            feet = switch (face) {
+                case UP -> point.clone();
+                case DOWN -> point.clone().subtract(new Vector(0, player.getHeight() + GAP, 0));
+                // up against the side, eyes level with where she looked
+                default -> point.clone().add(face.getDirection().multiply(halfWidth + GAP))
+                        .subtract(new Vector(0, player.getEyeHeight(), 0));
+            };
+        }
+
+        Location spot = fit(player, new Location(world, feet.getX(), feet.getY(), feet.getZ(), from.getYaw(), from.getPitch()));
+        if (spot != null) return spot;
+        return walkPath(player);
+    }
+
+    /// the target spot, or the nearest spot just above or below it where her whole hitbox fits
+    private static Location fit(Player player, Location target) {
+        BoundingBox box = player.getBoundingBox();
+        Vector shift = target.toVector().subtract(player.getLocation().toVector());
+        // up first, so looking at the foot of a wall or the floor stands her on the ground instead of in it
+        for (double dy : FIT_OFFSETS) {
+            if (!target.getWorld().hasCollisionsIn(box.clone().shift(shift.clone().add(new Vector(0, dy, 0))))) {
+                return target.clone().add(0, dy, 0);
+            }
+        }
+        return null;
+    }
+
+    /// fallback: slide her feet along her line of sight and keep the furthest spot her whole hitbox fits
+    private static Location walkPath(Player player) {
+        Location from = player.getLocation();
+        Vector direction = from.getDirection();
+        BoundingBox box = player.getBoundingBox();
+        double reached = 0;
+        for (double d = STEP; d <= DISTANCE + 1e-9; d += STEP) {
+            double step = Math.min(d, DISTANCE);
+            if (player.getWorld().hasCollisionsIn(box.clone().shift(direction.clone().multiply(step)))) break;
+            reached = step;
+        }
+        return reached < 0.5 ? null : from.clone().add(direction.multiply(reached));
     }
 
     private int remainingCooldown(Player player) {

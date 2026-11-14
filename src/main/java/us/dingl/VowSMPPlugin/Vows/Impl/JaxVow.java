@@ -119,11 +119,6 @@ public class JaxVow extends Vow implements TrustingVow, TurtleMasterBan.Banned {
     }
 
     @Override
-    public int livesLostOnDeath(Player player, int livesBefore, int lost) {
-        return 2;
-    }
-
-    @Override
     public void onLose(Player player) {
         readyAt.remove(player.getUniqueId());
         lastShown.remove(player.getUniqueId());

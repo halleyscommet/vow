@@ -24,6 +24,7 @@ public class VowCommand {
         subCommands.add(new AreaMineSubCommand(plugin));
         subCommands.add(new BlinkSubCommand(plugin));
         subCommands.add(new StunSubCommand(plugin));
+        subCommands.add(new SwapSubCommand(plugin));
         subCommands.add(new TrustSubCommand(plugin));
         subCommands.add(new MythicsSubCommand(plugin));
         // everything admin-only lives under here

@@ -1,9 +1,14 @@
 package us.dingl.VowSMPPlugin.Vows.Impl;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -14,11 +19,15 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageModifier;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 import us.dingl.VowSMPPlugin.Vows.Vow;
 
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +35,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 /// his hits (melee or projectile, any weapon) go straight through shields - full damage, no shield stun.
+/// /swap trades places with the player he's looking at (20 blocks, in sight) on a 30 second cooldown.
 /// In exchange, he can't raise a shield himself.
 @SuppressWarnings("deprecation") // DamageModifier is the only way to touch shield blocking in the damage event
 public class WhimplyVow extends Vow {
@@ -43,11 +53,23 @@ public class WhimplyVow extends Vow {
         }
     }
 
+    private static final double SWAP_RANGE = 20.0;
+    /// how far off his crosshair a player can be and still get swapped
+    private static final double AIM_TOLERANCE = 0.5;
+    private static final int SWAP_COOLDOWN_TICKS = 30 * 20;
+    /// how often the action bar counts down
+    private static final long COOLDOWN_DISPLAY_TICKS = 2L;
+
+    /// server tick his swap is ready again
+    private final Map<UUID, Integer> readyAt = new HashMap<>();
+
     /// victims whose shield we just ignored, waiting for the MONITOR handler to fake the hurt effects
     private final Set<UUID> pierced = new HashSet<>();
 
     public WhimplyVow(VowSMPPlugin plugin) {
         super(plugin);
+        // the lives bar only refreshes every 2 seconds, so count the cooldown down ourselves
+        Bukkit.getScheduler().runTaskTimer(plugin, this::cooldownTick, COOLDOWN_DISPLAY_TICKS, COOLDOWN_DISPLAY_TICKS);
     }
 
     @Override
@@ -62,13 +84,124 @@ public class WhimplyVow extends Vow {
 
     @Override
     public String description() {
-        return "Your hits go straight through shields, but you can't use a shield.";
+        return "Your hits go straight through shields. Type /swap to trade places with the player you're looking at ("
+                + (int) SWAP_RANGE + " blocks, " + SWAP_COOLDOWN_TICKS / 20 + " second cooldown). "
+                + "You can't use a shield.";
     }
 
     @Override
     public Material icon() {
         return Material.NETHERITE_AXE;
     }
+
+    @Override
+    public void onLose(Player player) {
+        readyAt.remove(player.getUniqueId());
+    }
+
+    @Override
+    public Component actionBarStatus(Player player) {
+        Component label = Component.text("Swap: ", NamedTextColor.GRAY);
+        int remaining = remainingCooldown(player);
+        if (remaining <= 0) {
+            return label.append(Component.text("READY", NamedTextColor.GREEN));
+        }
+        return label.append(Component.text((remaining + 19) / 20 + "s", NamedTextColor.RED));
+    }
+
+    // swap
+
+    /// runs /swap. Returns false if it's on cooldown, there's no one to swap with, or a teleport was
+    /// blocked (a Jax stun or the ritual storm) - only a swap that happens starts the cooldown.
+    public boolean activate(Player whimply) {
+        int remaining = remainingCooldown(whimply);
+        if (remaining > 0) {
+            whimply.sendMessage(Component.text("Swap is on cooldown for " + (remaining + 19) / 20 + "s.", NamedTextColor.RED));
+            return false;
+        }
+
+        Player target = findTarget(whimply);
+        if (target == null) {
+            whimply.sendMessage(Component.text("No one in range to swap with.", NamedTextColor.RED));
+            return false;
+        }
+
+        Location whimplyAt = whimply.getLocation();
+        Location targetAt = target.getLocation();
+        // each keeps facing the way they were
+        Location whimplyTo = targetAt.clone();
+        whimplyTo.setYaw(whimplyAt.getYaw());
+        whimplyTo.setPitch(whimplyAt.getPitch());
+        Location targetTo = whimplyAt.clone();
+        targetTo.setYaw(targetAt.getYaw());
+        targetTo.setPitch(targetAt.getPitch());
+
+        // teleports fail while riding something
+        whimply.leaveVehicle();
+        target.leaveVehicle();
+        // his side goes as an ender pearl, so a Jax stun or the ritual storm stops him like it stops pearls
+        if (!whimply.teleport(whimplyTo, TeleportCause.ENDER_PEARL)) return false;
+        if (!target.teleport(targetTo, TeleportCause.PLUGIN)) {
+            // their side was blocked (the storm) - put him back so nobody ends up stacked
+            whimply.teleport(whimplyAt, TeleportCause.PLUGIN);
+            whimply.sendMessage(Component.text("Couldn't swap with " + target.getName() + ".", NamedTextColor.RED));
+            return false;
+        }
+
+        swapEffects(whimplyAt);
+        swapEffects(targetAt);
+        whimply.sendMessage(Component.text("Swapped places with " + target.getName() + ".", NamedTextColor.GOLD));
+        target.sendMessage(Component.text(whimply.getName() + " swapped places with you!", NamedTextColor.RED));
+        readyAt.put(whimply.getUniqueId(), Bukkit.getCurrentTick() + SWAP_COOLDOWN_TICKS);
+        plugin.getLivesActionBar().update(whimply.getUniqueId());
+        return true;
+    }
+
+    /// the closest player whose (slightly padded) hitbox is under his crosshair, within range and in sight
+    private Player findTarget(Player whimply) {
+        Vector eye = whimply.getEyeLocation().toVector();
+        Vector direction = whimply.getEyeLocation().getDirection();
+
+        Player closest = null;
+        double closestDistance = Double.MAX_VALUE;
+        for (Player other : whimply.getWorld().getPlayers()) {
+            if (other.equals(whimply) || other.isDead()
+                    || other.getGameMode() == GameMode.SPECTATOR || other.getGameMode() == GameMode.CREATIVE) {
+                continue;
+            }
+
+            RayTraceResult hit = other.getBoundingBox().expand(AIM_TOLERANCE).rayTrace(eye, direction, SWAP_RANGE);
+            if (hit == null) continue;
+
+            double distance = hit.getHitPosition().distance(eye);
+            if (distance < closestDistance && whimply.hasLineOfSight(other)) {
+                closest = other;
+                closestDistance = distance;
+            }
+        }
+        return closest;
+    }
+
+    private static void swapEffects(Location at) {
+        at.getWorld().playSound(at, Sound.ENTITY_ENDERMAN_TELEPORT, SoundCategory.PLAYERS, 1f, 1f);
+        at.getWorld().spawnParticle(Particle.REVERSE_PORTAL, at.clone().add(0, 1, 0), 32, 0.3, 0.6, 0.3, 0.05);
+    }
+
+    private int remainingCooldown(Player player) {
+        Integer ready = readyAt.get(player.getUniqueId());
+        return ready == null ? 0 : ready - Bukkit.getCurrentTick();
+    }
+
+    private void cooldownTick() {
+        int now = Bukkit.getCurrentTick();
+        // keep each player in the map for one more refresh after it runs out, so the bar flips to READY right away
+        readyAt.entrySet().removeIf(entry -> {
+            plugin.getLivesActionBar().update(entry.getKey());
+            return entry.getValue() <= now;
+        });
+    }
+
+    // shields
 
     // LOWEST so anything else that adjusts damage sees the un-blocked numbers
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)

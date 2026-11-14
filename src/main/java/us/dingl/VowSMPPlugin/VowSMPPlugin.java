@@ -14,6 +14,7 @@ import us.dingl.VowSMPPlugin.Commands.LivesCommand;
 import us.dingl.VowSMPPlugin.Commands.Vow.MythicsSubCommand;
 import us.dingl.VowSMPPlugin.Commands.Vow.BlinkSubCommand;
 import us.dingl.VowSMPPlugin.Commands.Vow.StunSubCommand;
+import us.dingl.VowSMPPlugin.Commands.Vow.SwapSubCommand;
 import us.dingl.VowSMPPlugin.Commands.Vow.VowCommand;
 import us.dingl.VowSMPPlugin.Commands.WithdrawCommand;
 import us.dingl.VowSMPPlugin.Guis.AdminMenus;
@@ -473,6 +474,7 @@ public final class VowSMPPlugin extends JavaPlugin {
             registrar.register(new LivesCommand(this).build().build(), "Get lives or show an actionbar");
             registrar.register(new BlinkSubCommand(this).build().build(), "Use the Karma vow's blink");
             registrar.register(new StunSubCommand(this).build().build(), "Use the Jax vow's stun");
+            registrar.register(new SwapSubCommand(this).build().build(), "Use the Whimply vow's swap");
             registrar.register(new MythicsSubCommand(this).build().build(), "See who holds each mythic item");
             registrar.register(new GearCommand().build().build());
         });

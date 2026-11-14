@@ -18,13 +18,15 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import us.dingl.VowSMPPlugin.VowSMPPlugin;
 import us.dingl.VowSMPPlugin.Vows.SoulboundItemVow;
+import us.dingl.VowSMPPlugin.Vows.TurtleMasterBan;
 
 import java.util.List;
 
 /// gives a full set of Protection III netherite armor, otherwise max enchanted (no swift sneak or soul speed), that he keeps when he dies
 /// and can't drop or store. The armor can still break, and a broken piece is gone for good - it's never replaced,
-/// but he can wear his own armor in its place. He also can't use invisibility or drink potions of infestation.
-public class IceVow extends SoulboundItemVow {
+/// but he can wear his own armor in its place. Golden apples give him Absorption II instead of I.
+/// He can't use invisibility, drink potions of infestation or use Turtle Master (see TurtleMasterBan).
+public class IceVow extends SoulboundItemVow implements TurtleMasterBan.Banned {
 
     private static final int PROTECTION_LEVEL = 3;
 
@@ -46,7 +48,8 @@ public class IceVow extends SoulboundItemVow {
     public String description() {
         return "Gives netherite armor with Protection III (and otherwise max enchants) that you keep when you die "
                 + "and can't drop or store. "
-                + "When a piece breaks it's gone forever. You can't use invisibility or drink potions of infestation.";
+                + "When a piece breaks it's gone forever. Golden apples give you Absorption II. "
+                + "You can't use invisibility, drink potions of infestation or use Turtle Master.";
     }
 
     @Override
@@ -127,6 +130,18 @@ public class IceVow extends SoulboundItemVow {
         if (event.getEntity() instanceof Player player && has(player)) {
             event.setCancelled(true);
         }
+    }
+
+    /// a golden apple's Absorption I becomes II. Enchanted golden apples already give IV, so they're left alone.
+    @EventHandler(ignoreCancelled = true)
+    public void onAbsorption(EntityPotionEffectEvent event) {
+        PotionEffect effect = event.getNewEffect();
+        if (event.getCause() != EntityPotionEffectEvent.Cause.FOOD || effect == null
+                || !effect.getType().equals(PotionEffectType.ABSORPTION) || effect.getAmplifier() != 0) return;
+        if (!(event.getEntity() instanceof Player player) || !has(player)) return;
+
+        event.setCancelled(true);
+        player.addPotionEffect(effect.withAmplifier(1));
     }
 
     /// what every piece gets. Thorns is left off since it wears the armor down faster, and broken pieces are gone for good
