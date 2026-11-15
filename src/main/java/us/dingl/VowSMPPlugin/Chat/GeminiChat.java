@@ -85,11 +85,12 @@ public final class GeminiChat implements Listener {
         turns.forEach(contents::add);
         contents.add(userTurn);
         body.add("contents", contents);
-        if (!systemPrompt.isBlank()) {
-            JsonObject system = new JsonObject();
-            system.add("parts", parts(systemPrompt.replace("%player%", player.getName())));
-            body.add("systemInstruction", system);
-        }
+        // the server's rules, vows and the player's own state ride along with every message, so they stay current
+        String instructions = systemPrompt.replace("%player%", player.getName()).strip()
+                + "\n\n" + ServerContext.build(plugin, player);
+        JsonObject system = new JsonObject();
+        system.add("parts", parts(instructions));
+        body.add("systemInstruction", system);
         JsonObject generation = new JsonObject();
         generation.addProperty("maxOutputTokens", MAX_OUTPUT_TOKENS);
         JsonObject thinking = new JsonObject();
