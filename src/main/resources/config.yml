@@ -25,6 +25,21 @@ player-vows: {}
 guru-trusted: {}
 # same for the Guru 2 vow
 guru2-trusted: {}
+# easter egg blocks that puff smoke and clang ("world,x,y,z"), every interval ticks. Managed with /steam
+steam:
+  interval: 30
+  sources: []
+# /ai chatbot. Get a key at https://aistudio.google.com/apikey - or leave it empty and set the
+# GEMINI_API_KEY environment variable instead.
+gemini:
+  api-key: ""
+  model: "gemini-2.5-flash"
+  # %player% is replaced with the player's name
+  system-prompt: "You are a helpful assistant in a Minecraft SMP server's chat, talking to %player%. Keep answers short (a few sentences at most) and use plain text only - no markdown."
+  # how many past exchanges each player's conversation remembers
+  history: 10
+  # how long a player waits between messages
+  cooldown-seconds: 5
 # mythic item uuid -> name (MiniMessage) and holder uuid. Managed with /vow admin makemythic
 mythics: {}
 # cooldown group -> when it ends (epoch millis), for items with the cooldown ability. Managed by the plugin.

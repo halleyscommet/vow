@@ -16,6 +16,7 @@ public final class Permissions {
     public static final String STUN = "vow.stun";
     public static final String SWAP = "vow.swap";
     public static final String MYTHICS = "vow.mythics";
+    public static final String AI = "vow.ai";
 
     /// ops: /vow admin and everything under it
     public static final String ADMIN = "vow.admin";
@@ -31,6 +32,7 @@ public final class Permissions {
         add(pm, STUN, PermissionDefault.TRUE, "Use the Jax vow's stun");
         add(pm, SWAP, PermissionDefault.TRUE, "Use the Whimply 2 vow's swap");
         add(pm, MYTHICS, PermissionDefault.TRUE, "See who holds each mythic item");
+        add(pm, AI, PermissionDefault.TRUE, "Talk to the AI chatbot with /ai");
 
         add(pm, ADMIN, PermissionDefault.OP, "Use the admin panel and /vow admin commands");
     }
