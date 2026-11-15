@@ -38,6 +38,7 @@ import us.dingl.VowSMPPlugin.Vows.Impl.AuroraVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.CharlotteVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.ColleraVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.GoodwyllVow;
+import us.dingl.VowSMPPlugin.Vows.Impl.Guru2Vow;
 import us.dingl.VowSMPPlugin.Vows.Impl.GuruVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.HaleyVow;
 import us.dingl.VowSMPPlugin.Vows.Impl.HarperVow;
@@ -54,6 +55,8 @@ import us.dingl.VowSMPPlugin.Vows.VowManager;
 import us.dingl.VowSMPPlugin.Items.Abilities.AbilityManager;
 import us.dingl.VowSMPPlugin.Items.Abilities.Impl.CooldownAbility;
 import us.dingl.VowSMPPlugin.Items.Abilities.Impl.HeldEffectsAbility;
+import us.dingl.VowSMPPlugin.Items.Abilities.Impl.InventoryEffectsAbility;
+import us.dingl.VowSMPPlugin.Items.Abilities.ItemEffects;
 import us.dingl.VowSMPPlugin.Items.Abilities.Impl.InfiniteUseAbility;
 import us.dingl.paperGUI.api.PaperGUIApi;
 import us.dingl.paperGUI.builtin.Builtins;
@@ -461,6 +464,7 @@ public final class VowSMPPlugin extends JavaPlugin {
         vowManager.register(new JaxVow(this));
         vowManager.register(new Whimply2Vow(this));
         vowManager.register(new Ice2Vow(this));
+        vowManager.register(new Guru2Vow(this));
         // new vows go here
     }
 
@@ -468,7 +472,9 @@ public final class VowSMPPlugin extends JavaPlugin {
     private void registerAbilities() {
         abilityManager.register(new InfiniteUseAbility(this));
         abilityManager.register(new CooldownAbility(this));
-        abilityManager.register(new HeldEffectsAbility(this));
+        ItemEffects effects = new ItemEffects(this);
+        abilityManager.register(new HeldEffectsAbility(this, effects));
+        abilityManager.register(new InventoryEffectsAbility(this, effects));
         // new abilities go here
     }
 

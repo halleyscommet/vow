@@ -23,6 +23,8 @@ extra-vow-lives: [7]
 player-vows: {}
 # guru uuid -> uuids of players his smite never targets (/vow trust)
 guru-trusted: {}
+# same for the Guru 2 vow
+guru2-trusted: {}
 # mythic item uuid -> name (MiniMessage) and holder uuid. Managed with /vow admin makemythic
 mythics: {}
 # cooldown group -> when it ends (epoch millis), for items with the cooldown ability. Managed by the plugin.

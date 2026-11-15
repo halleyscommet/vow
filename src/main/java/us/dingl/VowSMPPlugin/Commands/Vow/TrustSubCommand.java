@@ -122,7 +122,7 @@ public class TrustSubCommand implements SubCommand {
     private List<TrustList> requireTrustLists(Player player) {
         List<TrustList> lists = trustLists(player);
         if (lists.isEmpty()) {
-            player.sendMessage(Component.text("Only the Guru and Jax vows can trust players.", NamedTextColor.RED));
+            player.sendMessage(Component.text("Only the Guru, Guru 2 and Jax vows can trust players.", NamedTextColor.RED));
         }
         return lists;
     }

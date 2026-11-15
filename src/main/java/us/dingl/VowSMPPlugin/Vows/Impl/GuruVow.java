@@ -46,8 +46,8 @@ import java.util.UUID;
 /// taking the vow drops him to 0 lives and destroys every life item he has, and every death after costs 2 lives.
 /// The vow stays dormant until he finishes a resurrection ritual. Then he gets a soulbound smite item:
 /// right click strikes the nearest player he's aiming at within 15 blocks with lightning for exactly 3 hearts
-/// (through armor) plus 1 second of Blindness and Darkness, on a 3 minute cooldown. Players he trusts with
-/// /vow trust are never targeted.
+/// (through armor) plus 1 second of Blindness and Darkness, on a 135 second cooldown. Players he trusts with
+/// /vow trust are never targeted. {@link Guru2Vow} is the same vow without the ritual.
 public class GuruVow extends SoulboundItemVow implements TrustingVow {
 
     private static final int LIVES_LOST = 2;
@@ -57,7 +57,7 @@ public class GuruVow extends SoulboundItemVow implements TrustingVow {
     /// 3 hearts
     private static final double DAMAGE = 6.0;
     private static final int EFFECT_TICKS = 20;
-    private static final int COOLDOWN_TICKS = 3 * 60 * 20;
+    private static final int COOLDOWN_TICKS = 135 * 20;
     /// how often the action bar counts down
     private static final long COOLDOWN_DISPLAY_TICKS = 2L;
 
@@ -75,21 +75,31 @@ public class GuruVow extends SoulboundItemVow implements TrustingVow {
     private final Map<UUID, Integer> readyAt = new HashMap<>();
     /// players he trusts - his smite never targets them
     private final TrustList trustList;
+    private final String id;
+    /// false for Guru 2: he gets smite right away instead of after a resurrection ritual
+    private final boolean needsRitual;
 
     public GuruVow(VowSMPPlugin plugin) {
-        super(plugin, "guru_smite");
-        awakenedKey = new NamespacedKey(plugin, "guru_awakened");
-        cooldownGroup = new NamespacedKey(plugin, "guru_smite");
+        this(plugin, "guru", ConfigKey.GURU_TRUSTED, true);
+    }
+
+    /// {@code id} also names the item tag and cooldown group, so don't change it once players have the vow
+    protected GuruVow(VowSMPPlugin plugin, String id, ConfigKey trustKey, boolean needsRitual) {
+        super(plugin, id + "_smite");
+        this.id = id;
+        this.needsRitual = needsRitual;
+        awakenedKey = new NamespacedKey(plugin, id + "_awakened");
+        cooldownGroup = new NamespacedKey(plugin, id + "_smite");
 
         DamageType type = RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).get(SMITE_KEY);
         if (type == null) {
             // datapack didn't load. magic also ignores armor and doesn't scale, but protection reduces it
-            plugin.getLogger().warning("Damage type " + SMITE_KEY + " is missing, Guru vow smite will use magic");
+            plugin.getLogger().warning("Damage type " + SMITE_KEY + " is missing, " + name() + " smite will use magic");
             type = DamageType.MAGIC;
         }
         smiteDamage = type;
 
-        trustList = new TrustList(plugin, ConfigKey.GURU_TRUSTED);
+        trustList = new TrustList(plugin, trustKey);
 
         // the lives bar only refreshes every 2 seconds, so count the cooldown down ourselves
         Bukkit.getScheduler().runTaskTimer(plugin, this::cooldownTick, COOLDOWN_DISPLAY_TICKS, COOLDOWN_DISPLAY_TICKS);
@@ -97,7 +107,7 @@ public class GuruVow extends SoulboundItemVow implements TrustingVow {
 
     @Override
     public String id() {
-        return "guru";
+        return id;
     }
 
     @Override
@@ -107,9 +117,11 @@ public class GuruVow extends SoulboundItemVow implements TrustingVow {
 
     @Override
     public String description() {
-        return "Give up every life you have and drop to 0. Complete a resurrection ritual to unlock Smite: "
+        return "Give up every life you have and drop to 0. "
+                + (needsRitual ? "Complete a resurrection ritual to unlock Smite: " : "You get Smite: ")
                 + "right click to strike the player you're aiming at (15 blocks) with lightning for 3 hearts "
-                + "and 1 second of Blindness and Darkness (3 minute cooldown). Every death costs " + LIVES_LOST + " lives.";
+                + "and 1 second of Blindness and Darkness (" + COOLDOWN_TICKS / 20 + " second cooldown). "
+                + "Every death costs " + LIVES_LOST + " lives.";
     }
 
     @Override
@@ -151,7 +163,12 @@ public class GuruVow extends SoulboundItemVow implements TrustingVow {
 
         player.sendMessage(Component.text("You gave up " + lives + (lives == 1 ? " life" : " lives")
                 + (items > 0 ? " and " + items + " life " + (items == 1 ? "item" : "items") : "")
-                + ". Complete a resurrection ritual to awaken your vow.", NamedTextColor.GOLD));
+                + (needsRitual ? ". Complete a resurrection ritual to awaken your vow." : "."), NamedTextColor.GOLD));
+
+        if (!needsRitual) {
+            super.onGain(player); // gives the smite item
+            plugin.getLivesActionBar().update(id);
+        }
     }
 
     @Override
@@ -163,7 +180,7 @@ public class GuruVow extends SoulboundItemVow implements TrustingVow {
 
     @Override
     public void onRitualComplete(Player player) {
-        if (isAwakened(player)) return;
+        if (!needsRitual || isAwakened(player)) return;
 
         player.getPersistentDataContainer().set(awakenedKey, PersistentDataType.BYTE, (byte) 1);
         super.onGain(player); // gives the smite item
@@ -274,7 +291,7 @@ public class GuruVow extends SoulboundItemVow implements TrustingVow {
     }
 
     private boolean isAwakened(Player player) {
-        return player.getPersistentDataContainer().has(awakenedKey, PersistentDataType.BYTE);
+        return !needsRitual || player.getPersistentDataContainer().has(awakenedKey, PersistentDataType.BYTE);
     }
 
     private int remainingCooldown(Player player) {
