@@ -19,10 +19,6 @@ import us.dingl.VowSMPPlugin.Commands.Vow.VowCommand;
 import us.dingl.VowSMPPlugin.Commands.WithdrawCommand;
 import us.dingl.VowSMPPlugin.Guis.AdminMenus;
 import us.dingl.VowSMPPlugin.Guis.GearMenu;
-import us.dingl.VowSMPPlugin.Easter.SteamVents;
-import us.dingl.VowSMPPlugin.Commands.SteamCommand;
-import us.dingl.VowSMPPlugin.Commands.AiCommand;
-import us.dingl.VowSMPPlugin.Chat.GeminiChat;
 import us.dingl.VowSMPPlugin.Guis.HeadCache;
 import us.dingl.VowSMPPlugin.Guis.LivesActionBar;
 import us.dingl.VowSMPPlugin.Items.LifeItem;
@@ -87,8 +83,6 @@ public final class VowSMPPlugin extends JavaPlugin {
     private Leaderboard leaderboard;
     private Leaderboard killsLeaderboard;
     private Storm storm;
-    private SteamVents steamVents;
-    private GeminiChat geminiChat;
     private VowManager vowManager;
     private MythicManager mythicManager;
     private AbilityManager abilityManager;
@@ -128,9 +122,6 @@ public final class VowSMPPlugin extends JavaPlugin {
 
         abilityManager = new AbilityManager(this);
         registerAbilities();
-
-        steamVents = new SteamVents(this);
-        geminiChat = new GeminiChat(this);
 
         updater = new Updater(this, getFile());
 
@@ -498,8 +489,6 @@ public final class VowSMPPlugin extends JavaPlugin {
             registrar.register(new SwapSubCommand(this).build().build(), "Use the Whimply 2 vow's swap");
             registrar.register(new MythicsSubCommand(this).build().build(), "See who holds each mythic item");
             registrar.register(new GearCommand().build().build());
-            registrar.register(new SteamCommand(steamVents).build().build());
-            registrar.register(new AiCommand(geminiChat).build().build(), "Talk to the AI chatbot");
         });
     }
 
@@ -514,9 +503,7 @@ public final class VowSMPPlugin extends JavaPlugin {
                 //new CombatLogListener(),
                 new AltarClickListener(this),
                 new TurtleMasterBan(this),
-                new GearMenu(this),
-                steamVents,
-                geminiChat
+                new GearMenu(this)
         );
     }
 
