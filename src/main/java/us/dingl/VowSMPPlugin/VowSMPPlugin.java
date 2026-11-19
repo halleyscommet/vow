@@ -162,6 +162,13 @@ public final class VowSMPPlugin extends JavaPlugin {
         breezeRodRecipe.addIngredient(Material.HEAVY_CORE);
         getServer().addRecipe(breezeRodRecipe);
 
+        // 4 wind charges craft back into a breeze rod
+        NamespacedKey windChargeKey = new NamespacedKey(this, "wind_charges_to_breeze_rod");
+        getServer().removeRecipe(windChargeKey);
+        ShapelessRecipe windChargeRecipe = new ShapelessRecipe(windChargeKey, new ItemStack(Material.BREEZE_ROD));
+        windChargeRecipe.addIngredient(4, Material.WIND_CHARGE);
+        getServer().addRecipe(windChargeRecipe);
+
         // make altar if it doesn't exist
         new Altar(this).spawn();
 
