@@ -129,6 +129,21 @@ public class CooldownAbility extends ItemAbility {
         }
     }
 
+    /// for abilities that do something themselves when the item is used (like Spark): false if the item
+    /// is still on cooldown, otherwise starts its cooldown and returns true. Items without this ability
+    /// can always be used.
+    public boolean tryUse(Player player, ItemStack item) {
+        Map<String, String> settings = settings(item);
+        if (settings == null || !settings.containsKey(GROUP)) return true;
+
+        NamespacedKey group = groupKey(settings);
+        if (stillCooling(player, item) || player.getCooldown(group) > 0) return false;
+        int ticks = (int) Math.min(Integer.MAX_VALUE, Long.parseLong(settings.get(LENGTH)) * 20);
+        player.setCooldown(group, ticks);
+        record(group.getKey(), ticks);
+        return true;
+    }
+
     /// true (and shows the cooldown) if this item is one of ours and hasn't come off cooldown yet
     private boolean stillCooling(Player player, ItemStack item) {
         Map<String, String> settings = settings(item);

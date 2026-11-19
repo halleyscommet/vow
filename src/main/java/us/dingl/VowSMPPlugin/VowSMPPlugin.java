@@ -58,6 +58,7 @@ import us.dingl.VowSMPPlugin.Items.Abilities.Impl.HeldEffectsAbility;
 import us.dingl.VowSMPPlugin.Items.Abilities.Impl.InventoryEffectsAbility;
 import us.dingl.VowSMPPlugin.Items.Abilities.ItemEffects;
 import us.dingl.VowSMPPlugin.Items.Abilities.Impl.InfiniteUseAbility;
+import us.dingl.VowSMPPlugin.Items.Abilities.Impl.SparkAbility;
 import us.dingl.paperGUI.api.PaperGUIApi;
 import us.dingl.paperGUI.builtin.Builtins;
 import us.dingl.paperGUI.internal.GuiManager;
@@ -471,10 +472,12 @@ public final class VowSMPPlugin extends JavaPlugin {
     /// abilities admins can put on items in the item builder
     private void registerAbilities() {
         abilityManager.register(new InfiniteUseAbility(this));
-        abilityManager.register(new CooldownAbility(this));
+        CooldownAbility cooldown = new CooldownAbility(this);
+        abilityManager.register(cooldown);
         ItemEffects effects = new ItemEffects(this);
         abilityManager.register(new HeldEffectsAbility(this, effects));
         abilityManager.register(new InventoryEffectsAbility(this, effects));
+        abilityManager.register(new SparkAbility(this, cooldown));
         // new abilities go here
     }
 
