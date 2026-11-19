@@ -1,5 +1,6 @@
 package us.dingl.VowSMPPlugin.Items.Abilities.Impl;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
@@ -46,6 +47,8 @@ public class DashAbility extends ItemAbility {
     private final CooldownAbility cooldown;
     /// player -> when their dash's fall damage protection runs out (epoch millis)
     private final Map<UUID, Long> noFallUntil = new HashMap<>();
+    /// player -> the tick they last dashed, so one click firing two interact events only dashes once
+    private final Map<UUID, Integer> lastDashTick = new HashMap<>();
 
     public DashAbility(VowSMPPlugin plugin, CooldownAbility cooldown) {
         super(plugin);
@@ -96,7 +99,11 @@ public class DashAbility extends ItemAbility {
         // opening a door or chest with the item in hand isn't a dash
         Block block = event.getClickedBlock();
         if (block != null && block.getType().isInteractable() && !player.isSneaking()) return;
+        int tick = Bukkit.getCurrentTick();
+        Integer last = lastDashTick.get(player.getUniqueId());
+        if (last != null && last == tick) return;
         if (!cooldown.tryUse(player, event.getItem())) return;
+        lastDashTick.put(player.getUniqueId(), tick);
 
         dash(player, blocks(settings));
     }
@@ -124,6 +131,7 @@ public class DashAbility extends ItemAbility {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         noFallUntil.remove(event.getPlayer().getUniqueId());
+        lastDashTick.remove(event.getPlayer().getUniqueId());
     }
 
     private static int blocks(Map<String, String> settings) {

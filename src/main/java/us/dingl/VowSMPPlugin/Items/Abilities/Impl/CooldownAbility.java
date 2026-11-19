@@ -41,6 +41,9 @@ public class CooldownAbility extends ItemAbility {
 
     /// cooldown group key -> when it ends (epoch millis)
     private final Map<String, Long> endsAt = new HashMap<>();
+    /// "player uuid/group key" -> the tick tryUse last started that cooldown, so other abilities on the
+    /// same item still go on that click. Cleared on each new start, so it never holds more than one.
+    private final Map<String, Integer> startedOnTick = new HashMap<>();
     private final String namespace;
 
     public CooldownAbility(VowSMPPlugin plugin) {
@@ -129,20 +132,26 @@ public class CooldownAbility extends ItemAbility {
         }
     }
 
-    /// for abilities that do their own thing on right click (like Dash): vanilla only starts use_cooldown
+    /// for abilities that do their own thing on right click (Dash, Spark): vanilla only starts use_cooldown
     /// when an item really gets used (eaten, thrown...), so they call this instead. False if the item is
     /// still cooling down; otherwise starts its cooldown and returns true. Items without Cooldown always
-    /// return true.
+    /// return true. Several abilities on one item all get to go on the same click: a cooldown this method
+    /// started for the same player this tick doesn't block them.
     public boolean tryUse(Player player, ItemStack item) {
         Map<String, String> settings = settings(item);
         if (settings == null || !settings.containsKey(GROUP)) return true;
-        if (stillCooling(player, item)) return false;
 
         NamespacedKey group = groupKey(settings);
-        if (player.getCooldown(group) > 0) return false;
+        String clickKey = player.getUniqueId() + "/" + group.getKey();
+        int tick = Bukkit.getCurrentTick();
+        if (startedOnTick.containsKey(clickKey) && startedOnTick.get(clickKey) == tick) return true;
+        if (stillCooling(player, item) || player.getCooldown(group) > 0) return false;
+
         int ticks = (int) Math.min(Integer.MAX_VALUE, Long.parseLong(settings.get(LENGTH)) * 20);
         player.setCooldown(group, ticks);
         record(group.getKey(), ticks);
+        startedOnTick.clear();
+        startedOnTick.put(clickKey, tick);
         return true;
     }
 
