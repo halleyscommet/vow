@@ -171,6 +171,14 @@ public final class VowSMPPlugin extends JavaPlugin {
         windChargeRecipe.addIngredient(4, Material.WIND_CHARGE);
         getServer().addRecipe(windChargeRecipe);
 
+        // an enchanted golden apple breaks down into golden apples. exact choice so only a plain
+        // vanilla notch apple matches, not mythic items built on one.
+        NamespacedKey notchAppleKey = new NamespacedKey(this, "enchanted_golden_apple_to_golden_apples");
+        getServer().removeRecipe(notchAppleKey);
+        ShapelessRecipe notchAppleRecipe = new ShapelessRecipe(notchAppleKey, new ItemStack(Material.GOLDEN_APPLE, 32));
+        notchAppleRecipe.addIngredient(new org.bukkit.inventory.RecipeChoice.ExactChoice(new ItemStack(Material.ENCHANTED_GOLDEN_APPLE)));
+        getServer().addRecipe(notchAppleRecipe);
+
         // make altar if it doesn't exist
         new Altar(this).spawn();
 
