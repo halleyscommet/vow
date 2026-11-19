@@ -55,6 +55,7 @@ import us.dingl.VowSMPPlugin.Vows.TurtleMasterBan;
 import us.dingl.VowSMPPlugin.Vows.VowManager;
 import us.dingl.VowSMPPlugin.Items.Abilities.AbilityManager;
 import us.dingl.VowSMPPlugin.Items.Abilities.Impl.CooldownAbility;
+import us.dingl.VowSMPPlugin.Items.Abilities.Impl.DashAbility;
 import us.dingl.VowSMPPlugin.Items.Abilities.Impl.HeldEffectsAbility;
 import us.dingl.VowSMPPlugin.Items.Abilities.Impl.InventoryEffectsAbility;
 import us.dingl.VowSMPPlugin.Items.Abilities.ItemEffects;
@@ -492,10 +493,12 @@ public final class VowSMPPlugin extends JavaPlugin {
     /// abilities admins can put on items in the item builder
     private void registerAbilities() {
         abilityManager.register(new InfiniteUseAbility(this));
-        abilityManager.register(new CooldownAbility(this));
+        CooldownAbility cooldown = new CooldownAbility(this);
+        abilityManager.register(cooldown);
         ItemEffects effects = new ItemEffects(this);
         abilityManager.register(new HeldEffectsAbility(this, effects));
         abilityManager.register(new InventoryEffectsAbility(this, effects));
+        abilityManager.register(new DashAbility(this, cooldown));
         // new abilities go here
     }
 
