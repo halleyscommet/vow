@@ -24,6 +24,7 @@ public enum ConfigKey {
     ITEM_COOLDOWNS("item-cooldowns"),
     MYTHIC_BROADCAST("mythic-transfer.broadcast"),
     MYTHIC_SOUND("mythic-transfer.sound"),
+    MACE_COOLDOWN("mace-cooldown"),
     UPDATE_REPO("update-repo"),
     RESOURCE_PACK_SOURCE("resource-pack.source"),
     RESOURCE_PACK_URL("resource-pack.url"),

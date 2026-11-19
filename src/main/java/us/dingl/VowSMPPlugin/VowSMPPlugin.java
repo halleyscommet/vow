@@ -28,6 +28,7 @@ import us.dingl.VowSMPPlugin.Mythics.MythicManager;
 import us.dingl.VowSMPPlugin.Listeners.ClaimLifeListener;
 import us.dingl.VowSMPPlugin.Listeners.DeathListener;
 import us.dingl.VowSMPPlugin.Listeners.LoginListener;
+import us.dingl.VowSMPPlugin.Listeners.MaceCooldownListener;
 import us.dingl.VowSMPPlugin.Listeners.ResourcePackListener;
 import us.dingl.VowSMPPlugin.Listeners.Ritual.AltarClickListener;
 import us.dingl.VowSMPPlugin.Listeners.Ritual.StormConfinementListener;
@@ -88,6 +89,7 @@ public final class VowSMPPlugin extends JavaPlugin {
     private AbilityManager abilityManager;
     private Updater updater;
     private ResourcePackListener resourcePackListener;
+    private MaceCooldownListener maceCooldown;
 
     private GuiManager guiManager;
     private HeadCache headCache;
@@ -238,6 +240,10 @@ public final class VowSMPPlugin extends JavaPlugin {
 
     public MythicManager getMythicManager() {
         return mythicManager;
+    }
+
+    public MaceCooldownListener getMaceCooldown() {
+        return maceCooldown;
     }
 
     public AbilityManager getAbilityManager() {
@@ -494,6 +500,7 @@ public final class VowSMPPlugin extends JavaPlugin {
 
     private void registerListeners() {
         resourcePackListener = new ResourcePackListener(this);
+        maceCooldown = new MaceCooldownListener(this);
         registerListeners(
                 new LoginListener(this),
                 new DeathListener(this),
@@ -503,7 +510,8 @@ public final class VowSMPPlugin extends JavaPlugin {
                 //new CombatLogListener(),
                 new AltarClickListener(this),
                 new TurtleMasterBan(this),
-                new GearMenu(this)
+                new GearMenu(this),
+                maceCooldown
         );
     }
 

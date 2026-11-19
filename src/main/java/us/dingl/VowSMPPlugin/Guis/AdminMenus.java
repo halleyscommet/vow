@@ -439,6 +439,7 @@ public final class AdminMenus {
                         manager::isBroadcastEnabled, manager::setBroadcastEnabled))
                 .button(47, transferToggle("Sound", Material.NOTE_BLOCK,
                         manager::isSoundEnabled, manager::setSoundEnabled))
+                .button(48, maceCooldownButton())
                 .button(51, Button.builder()
                         .item(item(Material.ANVIL, "<yellow><b>Make Held Item Mythic",
                                 "<gray>Hold a single item in your main hand"))
@@ -475,6 +476,32 @@ public final class AdminMenus {
                     ctx.refresh();
                 })
                 .build();
+    }
+
+    /// how long non-mythic maces cool down after a hit. Left/right click +1/-1s, shift for 10s.
+    private Button maceCooldownButton() {
+        return Button.builder()
+                .item(ctx -> {
+                    int seconds = plugin.getMaceCooldown().getSeconds();
+                    return item(Material.MACE, seconds > 0 ? "<gold><b>Mace Cooldown: " + seconds + "s" : "<red><b>Mace Cooldown: Off",
+                            "<gray>After a mace hit, mythic maces exempt",
+                            "<gray>Left click: <green>+1s <gray>Shift: <green>+10s",
+                            "<gray>Right click: <red>-1s <gray>Shift: <red>-10s");
+                })
+                .priority(1) // above the filler in that slot
+                .on(ClickKind.LEFT, ctx -> changeMaceCooldown(ctx, 1))
+                .on(ClickKind.SHIFT_LEFT, ctx -> changeMaceCooldown(ctx, 10))
+                .on(ClickKind.RIGHT, ctx -> changeMaceCooldown(ctx, -1))
+                .on(ClickKind.SHIFT_RIGHT, ctx -> changeMaceCooldown(ctx, -10))
+                .build();
+    }
+
+    private void changeMaceCooldown(ClickContext ctx, int change) {
+        int before = plugin.getMaceCooldown().getSeconds();
+        int after = plugin.getMaceCooldown().setSeconds(before + change);
+        UiSound sound = after == before ? UiSound.ERROR : change > 0 ? UiSound.UP : UiSound.DOWN;
+        sound.play(ctx.player());
+        ctx.refresh();
     }
 
     private ItemStack mythicItem(Mythic mythic) {

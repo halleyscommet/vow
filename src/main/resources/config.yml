@@ -29,6 +29,9 @@ guru2-trusted: {}
 mythics: {}
 # cooldown group -> when it ends (epoch millis), for items with the cooldown ability. Managed by the plugin.
 item-cooldowns: {}
+# seconds maces cool down after hitting something (0 = off). Mythic maces are exempt.
+# Change in game with /vow admin mace cooldown <seconds> or the Mythics page of /vow admin
+mace-cooldown: 5
 # what happens when a mythic changes hands
 mythic-transfer:
   broadcast: true
