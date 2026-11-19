@@ -85,13 +85,14 @@ public final class GearMenu implements Listener {
         ItemStack[] items = {
                 // row 1: armor down the left, then weapons and tools
                 armor(Material.DIAMOND_HELMET, Enchantment.RESPIRATION, 3, Enchantment.AQUA_AFFINITY, 1),
-                gear(Material.DIAMOND_SWORD, Enchantment.SHARPNESS, 3, Enchantment.LOOTING, 3, Enchantment.SWEEPING_EDGE, 3),
-                gear(Material.DIAMOND_AXE, Enchantment.SHARPNESS, 3, Enchantment.EFFICIENCY, 5),
-                gear(Material.DIAMOND_PICKAXE, Enchantment.EFFICIENCY, 5, Enchantment.FORTUNE, 3),
+                gear(Material.NETHERITE_SWORD, Enchantment.SHARPNESS, 5, Enchantment.LOOTING, 3, Enchantment.SWEEPING_EDGE, 3),
+                gear(Material.NETHERITE_AXE, Enchantment.SHARPNESS, 5, Enchantment.EFFICIENCY, 5),
+                gear(Material.NETHERITE_PICKAXE, Enchantment.EFFICIENCY, 5, Enchantment.FORTUNE, 3),
                 gear(Material.NETHERITE_PICKAXE, Enchantment.EFFICIENCY, 5, Enchantment.SILK_TOUCH, 1),
                 gear(Material.NETHERITE_SHOVEL, Enchantment.EFFICIENCY, 5),
                 gear(Material.SHIELD),
-                enchanted(Material.BOW, Enchantment.POWER, 5, Enchantment.UNBREAKING, 3, Enchantment.INFINITY, 1),
+                enchanted(Material.BOW, Enchantment.POWER, 5, Enchantment.PUNCH, 2, Enchantment.FLAME, 1,
+                        Enchantment.UNBREAKING, 3, Enchantment.INFINITY, 1),
                 gear(Material.CROSSBOW, Enchantment.QUICK_CHARGE, 3, Enchantment.MULTISHOT, 1),
 
                 // row 2: consumables
@@ -105,7 +106,7 @@ public final class GearMenu implements Listener {
                 new ItemStack(Material.FIREWORK_ROCKET, 64),
                 new ItemStack(Material.GOLDEN_CARROT, 64),
 
-                // row 3: potions - Strength II and Speed I at most, no weaving
+                // row 3: potions - Strength II and Speed I at most
                 armor(Material.DIAMOND_LEGGINGS, Enchantment.SWIFT_SNEAK, 3),
                 potion(Material.SPLASH_POTION, PotionType.STRONG_STRENGTH),
                 potion(Material.SPLASH_POTION, PotionType.LONG_SWIFTNESS),
@@ -129,15 +130,18 @@ public final class GearMenu implements Listener {
 
                 // row 5
                 armor(Material.DIAMOND_BOOTS, Enchantment.FEATHER_FALLING, 4, Enchantment.DEPTH_STRIDER, 3),
+                potion(Material.SPLASH_POTION, PotionType.WEAVING),
+                new ItemStack(Material.CHORUS_FRUIT, 64),
+                new ItemStack(Material.TNT_MINECART),
         };
         inventory.setContents(items);
         player.openInventory(inventory);
     }
 
-    /// Protection III plus Unbreaking III and Mending, and whatever else is passed
+    /// Protection IV plus Unbreaking III and Mending, and whatever else is passed
     private static ItemStack armor(Material type, Object... extra) {
         ItemStack item = gear(type, extra);
-        item.addEnchantment(Enchantment.PROTECTION, 3);
+        item.addEnchantment(Enchantment.PROTECTION, 4);
         return item;
     }
 
