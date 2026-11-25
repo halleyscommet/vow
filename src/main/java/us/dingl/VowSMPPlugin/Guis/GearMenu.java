@@ -133,6 +133,7 @@ public final class GearMenu implements Listener {
                 potion(Material.SPLASH_POTION, PotionType.WEAVING),
                 new ItemStack(Material.CHORUS_FRUIT, 64),
                 new ItemStack(Material.TNT_MINECART),
+                new ItemStack(Material.POWERED_RAIL, 64),
                 new ItemStack(Material.MACE),
         };
         inventory.setContents(items);
