@@ -35,7 +35,7 @@ public class HarperVow extends Vow {
     /// rises about 2.5 blocks from where she taps, so she can clear 2 block walls with room to spare
     private static final double JUMP_UP = 0.618;
     private static final double JUMP_FORWARD = 0.7;
-    private static final int COOLDOWN_TICKS = 5 * 20;
+    private static final int COOLDOWN_TICKS = 7 * 20;
     /// both presses have to land this close together, same as vanilla's double tap to fly
     private static final int DOUBLE_TAP_TICKS = 7;
     /// how often the cooldown in the action bar counts down
