@@ -9,6 +9,7 @@ import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
+import us.dingl.VowSMPPlugin.Bounty.BountyManager;
 import us.dingl.VowSMPPlugin.Commands.GearCommand;
 import us.dingl.VowSMPPlugin.Commands.LivesCommand;
 import us.dingl.VowSMPPlugin.Commands.Vow.MythicsSubCommand;
@@ -92,6 +93,7 @@ public final class VowSMPPlugin extends JavaPlugin {
     private Updater updater;
     private ResourcePackListener resourcePackListener;
     private MaceCooldownListener maceCooldown;
+    private BountyManager bountyManager;
 
     private GuiManager guiManager;
     private HeadCache headCache;
@@ -127,6 +129,8 @@ public final class VowSMPPlugin extends JavaPlugin {
         abilityManager = new AbilityManager(this);
         registerAbilities();
 
+        bountyManager = new BountyManager(this);
+
         updater = new Updater(this, getFile());
 
         registerCommands();
@@ -141,6 +145,7 @@ public final class VowSMPPlugin extends JavaPlugin {
         getServer().getScheduler().runTask(this, () -> {
             leaderboard.refresh();
             killsLeaderboard.refresh();
+            bountyManager.start();
         });
 
         // register recipe
@@ -261,6 +266,10 @@ public final class VowSMPPlugin extends JavaPlugin {
 
     public MaceCooldownListener getMaceCooldown() {
         return maceCooldown;
+    }
+
+    public BountyManager getBountyManager() {
+        return bountyManager;
     }
 
     public AbilityManager getAbilityManager() {
@@ -531,7 +540,8 @@ public final class VowSMPPlugin extends JavaPlugin {
                 new AltarClickListener(this),
                 new TurtleMasterBan(this),
                 new GearMenu(this),
-                maceCooldown
+                maceCooldown,
+                bountyManager
         );
     }
 

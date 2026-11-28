@@ -29,6 +29,7 @@ public class AdminCommand implements SubCommand {
                 new ItemAdminCommand(plugin),
                 new LeaderboardAdminCommand(plugin),
                 new KillsAdminCommand(plugin),
+                new BountyAdminCommand(plugin),
                 new PackAdminCommand(plugin),
                 new RitualAdminCommand(plugin),
                 new StatsAdminCommand(plugin),

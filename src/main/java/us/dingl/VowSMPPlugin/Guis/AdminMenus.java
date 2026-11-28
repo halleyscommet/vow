@@ -217,7 +217,7 @@ public final class AdminMenus {
                 .pattern(
                         "#########",
                         "H#L#V#I#K",
-                        "B########")
+                        "B#######G")
                 .bind('#', filler())
                 .bind('B', backButton())
                 .bind('H', Button.of(ctx -> playerHead(target(ctx)), ctx -> { }))
@@ -251,6 +251,31 @@ public final class AdminMenus {
                         .on(ClickKind.SHIFT_RIGHT, ctx -> {
                             plugin.setPlayerKills(target(ctx), 0);
                             UiSound.REMOVE.play(ctx.player());
+                            ctx.refresh();
+                        })
+                        .build())
+                .bind('G', Button.builder()
+                        .item(ctx -> {
+                            ItemStack item = plugin.getBountyManager().has(target(ctx))
+                                    ? item(Material.GOLDEN_HELMET, "<gold><b>Has the Bounty",
+                                            "<gray>Gold name, goes to whoever kills them",
+                                            "<gray>Click to take it away")
+                                    : item(Material.GOLDEN_HELMET, "<gray><b>No Bounty",
+                                            "<gray>Gives them a gold name that goes",
+                                            "<gray>to whoever kills them", "<gray>Click to give it");
+                            if (plugin.getBountyManager().has(target(ctx))) {
+                                item.editMeta(meta -> meta.setEnchantmentGlintOverride(true));
+                            }
+                            return item;
+                        })
+                        .onClick(ctx -> {
+                            UUID id = target(ctx);
+                            if (plugin.getBountyManager().take(id)) {
+                                UiSound.REMOVE.play(ctx.player());
+                            } else {
+                                plugin.getBountyManager().give(id);
+                                UiSound.SUCCESS.play(ctx.player());
+                            }
                             ctx.refresh();
                         })
                         .build())
@@ -625,6 +650,7 @@ public final class AdminMenus {
                 + (vows.isEmpty() ? "none" : String.join(", ", vows.stream().map(Vow::name).toList()))));
         lore.add(text(isImmortal(id) ? "<gold>Immortal" : "<dark_gray>Has died"));
         lore.add(text("<gray>Kills: <white>" + plugin.getPlayerKills(id)));
+        if (plugin.getBountyManager().has(id)) lore.add(text("<gold><b>Has the bounty"));
         if (extraLore.length > 0) {
             lore.add(Component.empty());
             for (String line : extraLore) lore.add(text(line));

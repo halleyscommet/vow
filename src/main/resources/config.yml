@@ -32,6 +32,9 @@ item-cooldowns: {}
 # seconds maces cool down after hitting something (0 = off). Mythic maces are exempt.
 # Change in game with /vow admin mace cooldown <seconds> or the Mythics page of /vow admin
 mace-cooldown: 5
+# uuids holding the event bounty (gold name). It moves to whoever kills them.
+# Managed with /vow admin bounty or a player's page in /vow admin
+bounty-holders: []
 # what happens when a mythic changes hands
 mythic-transfer:
   broadcast: true
